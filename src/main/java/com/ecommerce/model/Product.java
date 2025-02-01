@@ -15,7 +15,12 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -37,6 +42,7 @@ import lombok.NoArgsConstructor;
 // - updatedAt
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -50,22 +56,29 @@ public class Product {
     private Set<Category> categories;
 
     @Column(nullable = false)
+    @NotBlank(message = "Name is required.")
+    @Size(min = 2, max = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(length = 1000)
     private String description;
     
     @Column(precision = 10, scale = 2, nullable = false)
+    @NotNull(message = "Price is required.")
+    @Min(value = 0)
     private BigDecimal price;
 
     @Column(precision = 3, scale = 2)
-    private BigDecimal rating;
+    @Builder.Default
+    private BigDecimal rating = BigDecimal.ZERO;
 
     @Column(name = "number_of_reviews")
-    private Integer numberOfReviews;
+    @Builder.Default
+    private Integer numberOfReviews = 0;
 
     @Column(nullable = false)
-    private Boolean active;
+    @Builder.Default
+    private Boolean active = true;
 
     @Column(columnDefinition = "jsonb")
     private String attributes;
@@ -77,6 +90,8 @@ public class Product {
     private Long version;
 
     @Column(name = "stock_quantity")
+    @NotNull(message = "La quantité en stock est obligatoire")
+    @Min(value = 0)
     private Integer stockInQuantity;
 
     @Column(name = "created_at", nullable = false, updatable = false)
