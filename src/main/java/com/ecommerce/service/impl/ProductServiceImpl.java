@@ -59,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public Product createProduct(Product product) {
-           log.debug("Création d'un nouveau produit : {}", product.getName());
+        log.debug("Création d'un nouveau produit : {}", product.getName());
         _validateProduct(product);
         
         try {
