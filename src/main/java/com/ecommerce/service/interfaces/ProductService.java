@@ -1,0 +1,17 @@
+package com.ecommerce.service.interfaces;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.ecommerce.model.Category;
+import com.ecommerce.model.Product;
+
+public interface ProductService {
+    Product createProduct(Product product);
+    Product updateProduct(Long id, Product product);
+    void deleteProduct(Long id);
+    Page<Product> findAllProducts(Pageable pageable);
+    Product findProductById(Long id);
+    Page<Product> findProductsByCategory(Category category, Pageable pageable);
+    // List<Product> searchProducts(ProductSearchCriteria criteria);
+}
