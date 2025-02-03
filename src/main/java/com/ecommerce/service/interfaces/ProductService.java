@@ -3,8 +3,8 @@ package com.ecommerce.service.interfaces;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.ecommerce.model.Category;
-import com.ecommerce.model.Product;
+import com.ecommerce.model.entity.Category;
+import com.ecommerce.model.entity.Product;
 
 public interface ProductService {
     Product createProduct(Product product);
