@@ -15,6 +15,8 @@ public class DatabaseConfig {
         config.setMinimumIdle(5);
         config.setIdleTimeout(300000);
         config.setConnectionTimeout(20000);
+        config.setMaxLifetime(1800000);
+        config.setLeakDetectionThreshold(10000);
         return new HikariDataSource(config);
     }
 }
