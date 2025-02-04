@@ -1,80 +1,80 @@
-package com.ecommerce.config;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
+// package com.ecommerce.config;
+// import java.time.Duration;
+// import java.util.HashMap;
+// import java.util.Map;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+// import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+// import org.springframework.beans.factory.annotation.Value;
+// import org.springframework.cache.annotation.EnableCaching;
+// import org.springframework.context.annotation.Bean;
+// import org.springframework.context.annotation.Configuration;
+// import org.springframework.data.redis.cache.RedisCacheConfiguration;
+// import org.springframework.data.redis.cache.RedisCacheManager;
+// import org.springframework.data.redis.connection.RedisConnectionFactory;
+// import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+// import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+// import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+// import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+// import org.springframework.data.redis.serializer.RedisSerializationContext;
+// import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-@Configuration
-@EnableCaching
-public class CacheConfig {
+// @Configuration
+// @EnableCaching
+// public class CacheConfig {
 
-    /**
-     * Configuration du cache Redis multi-niveaux.
-     * Optimisé pour performance et scalabilité.
-     */
-    @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Configuration TTL par défaut
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofHours(1))
-            .serializeKeysWith(RedisSerializationContext.SerializationPair
-                .fromSerializer(new StringRedisSerializer()))
-            .serializeValuesWith(RedisSerializationContext.SerializationPair
-                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+//     /**
+//      * Configuration du cache Redis multi-niveaux.
+//      * Optimisé pour performance et scalabilité.
+//      */
+//     @Bean
+//     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+//         // Configuration TTL par défaut
+//         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+//             .entryTtl(Duration.ofHours(1))
+//             .serializeKeysWith(RedisSerializationContext.SerializationPair
+//                 .fromSerializer(new StringRedisSerializer()))
+//             .serializeValuesWith(RedisSerializationContext.SerializationPair
+//                 .fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
-        // Configuration par cache
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+//         // Configuration par cache
+//         Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
         
-        // Cache recommandations: 1 heure
-        cacheConfigs.put("recommendations", config);
+//         // Cache recommandations: 1 heure
+//         cacheConfigs.put("recommendations", config);
         
-        // Cache produits: 24 heures
-        cacheConfigs.put("products", config.entryTtl(Duration.ofHours(24)));
+//         // Cache produits: 24 heures
+//         cacheConfigs.put("products", config.entryTtl(Duration.ofHours(24)));
         
-        // Cache utilisateurs: 12 heures
-        cacheConfigs.put("users", config.entryTtl(Duration.ofHours(12)));
+//         // Cache utilisateurs: 12 heures
+//         cacheConfigs.put("users", config.entryTtl(Duration.ofHours(12)));
 
-        return RedisCacheManager.builder(connectionFactory)
-            .cacheDefaults(config)
-            .withInitialCacheConfigurations(cacheConfigs)
-            .build();
-    }
+//         return RedisCacheManager.builder(connectionFactory)
+//             .cacheDefaults(config)
+//             .withInitialCacheConfigurations(cacheConfigs)
+//             .build();
+//     }
 
-    /**
-     * Pool de connexions Redis optimisé
-     */
-    @Bean
-    public RedisConnectionFactory redisConnectionFactory(
-        @Value("${spring.redis.host}") String host,
-        @Value("${spring.redis.port}") int port
-    ) {
-        LettucePoolingClientConfiguration poolConfig = LettucePoolingClientConfiguration.builder()
-            .poolConfig(new GenericObjectPoolConfig<Object>())
-            .commandTimeout(Duration.ofSeconds(1))
-            .shutdownTimeout(Duration.ofSeconds(2))
-            .build();
+//     /**
+//      * Pool de connexions Redis optimisé
+//      */
+//     @Bean
+//     public RedisConnectionFactory redisConnectionFactory(
+//         @Value("${spring.redis.host}") String host,
+//         @Value("${spring.redis.port}") int port
+//     ) {
+//         LettucePoolingClientConfiguration poolConfig = LettucePoolingClientConfiguration.builder()
+//             .poolConfig(new GenericObjectPoolConfig<>())
+//             .commandTimeout(Duration.ofSeconds(1))
+//             .shutdownTimeout(Duration.ofSeconds(2))
+//             .build();
 
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(
-            new RedisStandaloneConfiguration(host, port),
-            poolConfig
-        );
-        return factory;
-    }
-}
+//         LettuceConnectionFactory factory = new LettuceConnectionFactory(
+//             new RedisStandaloneConfiguration(host, port),
+//             poolConfig
+//         );
+//         return factory;
+//     }
+// }
 
 
 
