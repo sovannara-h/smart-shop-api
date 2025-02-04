@@ -3,8 +3,12 @@ package com.ecommerce.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 @Configuration
 public class OpenAPIConfig {
@@ -15,6 +19,16 @@ public class OpenAPIConfig {
                 .info(new Info()
                         .title("API E-commerce")
                         .version("1.0")
-                        .description("Documentation de l'API E-commerce"));
+                        .description("API REST pour la gestion d'une boutique en ligne")
+                        .contact(new Contact()
+                                .name("Équipe E-commerce")
+                                .email("contact@ecommerce.com"))
+                )
+                .addSecurityItem(new SecurityRequirement().addList("bearer-jwt"))
+                .components(new Components()
+                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")));
     }
 } 
