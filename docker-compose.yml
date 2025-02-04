@@ -1,0 +1,101 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=smart_shop
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-1:
+    image: redis:latest
+    container_name: redis-1
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis1-data:/data
+    networks:
+      - redis-net
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-2:
+    image: redis:latest
+    container_name: redis-2
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis2-data:/data
+    networks:
+      - redis-net
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-3:
+    image: redis:latest
+    container_name: redis-3
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis3-data:/data
+    networks:
+      - redis-net
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-cluster-init:
+    image: redis:latest
+    container_name: redis-cluster-init
+    networks:
+      - redis-net
+    depends_on:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+    command: >
+      bash -c "
+      sleep 5 &&
+      redis-cli -h redis-1 FLUSHALL &&
+      redis-cli -h redis-2 FLUSHALL &&
+      redis-cli -h redis-3 FLUSHALL &&
+      redis-cli -h redis-1 CLUSTER RESET HARD &&
+      redis-cli -h redis-2 CLUSTER RESET HARD &&
+      redis-cli -h redis-3 CLUSTER RESET HARD &&
+      sleep 2 &&
+      echo yes | redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0 &&
+      exit 0
+      "
+
+networks:
+  redis-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis1-data:
+  redis2-data:
+  redis3-data:

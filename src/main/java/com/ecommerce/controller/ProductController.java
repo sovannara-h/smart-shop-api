@@ -3,6 +3,8 @@ package com.ecommerce.controller;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
@@ -67,6 +69,7 @@ public class ProductController {
 
     @Operation(summary = "Mettre à jour un produit", description = "Met à jour un produit existant")
     @PutMapping("/{id}")
+    @CachePut(value = "products", key = "#id")
     @RateLimiter(name = "updateProduct")
     public ResponseEntity<ApiResponse<Product>> updateProduct(
         @Parameter(description = "ID du produit") 
@@ -120,6 +123,7 @@ public class ProductController {
 
     @Operation(summary = "Supprimer un produit", description = "Supprime un produit existant")
     @DeleteMapping("/{id}")
+    @CacheEvict(value = "products", key = "#id")
     @RateLimiter(name = "deleteProduct")
     public ResponseEntity<Void> deleteProduct(
         @Parameter(description = "ID du produit")
