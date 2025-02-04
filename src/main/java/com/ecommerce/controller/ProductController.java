@@ -28,6 +28,7 @@ import com.ecommerce.model.entity.Product;
 import com.ecommerce.service.interfaces.ProductService;
 
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,6 +50,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Créer un nouveau produit")
+    @Timed(value = "product.creation.time", description = "Temps de création d'un produit")
     @PostMapping
     @RateLimiter(name = "createProduct")
     public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody Product product) {
