@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +55,7 @@ public class ProductController {
     @Operation(summary = "Créer un nouveau produit")
     @Timed(value = "product.creation.time", description = "Temps de création d'un produit")
     @PostMapping
+    @CacheEvict(value = "products", key = "'page-*'", allEntries = false)
     @RateLimiter(name = "createProduct", fallbackMethod = "createProductFallback")
     @Bulkhead(name = "createProduct", fallbackMethod = "createProductFallback")
     public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody Product product) {
@@ -78,7 +79,10 @@ public class ProductController {
 
     @Operation(summary = "Mettre à jour un produit", description = "Met à jour un produit existant")
     @PutMapping("/{id}")
-    @CachePut(value = "products", key = "#id")
+    @Caching(evict = {
+        @CacheEvict(value = "products", key = "#id"),
+        @CacheEvict(value = "products", key = "'page-*'")
+    })
     @RateLimiter(name = "updateProduct")
     public ResponseEntity<ApiResponse<Product>> updateProduct(
         @Parameter(description = "ID du produit") 
@@ -132,7 +136,10 @@ public class ProductController {
 
     @Operation(summary = "Supprimer un produit", description = "Supprime un produit existant")
     @DeleteMapping("/{id}")
-    @CacheEvict(value = "products", key = "#id")
+    @Caching(evict = {
+        @CacheEvict(value = "products", key = "#id"),
+        @CacheEvict(value = "products", key = "'page-*'")
+    })
     @RateLimiter(name = "deleteProduct")
     public ResponseEntity<Void> deleteProduct(
         @Parameter(description = "ID du produit")
@@ -158,7 +165,7 @@ public class ProductController {
 
     @Operation(summary = "Récupérer tous les produits", description = "Retourne une liste paginée de tous les produits")
     @GetMapping
-    @Cacheable(value = "products", key = "#page + '-' + #size", unless = "#result.body.data.content.isEmpty()")
+    @Cacheable(value = "products", key = "'page-' + #page + '-' + #size", unless = "#result.body.data.content.isEmpty()")
     public ResponseEntity<ApiResponse<Page<Product>>> getAllProducts(
             @Parameter(description = "Numéro de page (commence à 0)")
             @RequestParam(defaultValue = "0") int page,
