@@ -3,6 +3,7 @@ package com.ecommerce.controller;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
+import org.hibernate.Hibernate;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -199,10 +200,13 @@ public class ProductController {
         
         try {
             Product product = productService.findProductById(id);
+            // Force l'initialisation de la collection categories
+            Hibernate.initialize(product.getCategories());
+            
             return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES))
                 .eTag(String.valueOf(product.getVersion()))
-                .body(new ApiResponse<>(true, product, "Produits récupérés avec succès", null, LocalDateTime.now()));
+                .body(new ApiResponse<>(true, product, "Produit récupéré avec succès", null, LocalDateTime.now()));
                 
         } catch (ProductException e) {
             log.warn("Produit non trouvé: {}", id);
