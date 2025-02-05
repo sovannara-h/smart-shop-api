@@ -1,9 +1,12 @@
 package com.ecommerce.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +48,9 @@ public class ProductControllerIntegrationTest {
             .price(new BigDecimal("99.99"))
             .stockInQuantity(10)
             .active(true)
-            .attributes("{}")
+            .attributes(Collections.emptyMap())
+            .interactions(Collections.emptyMap())
+            .numberOfReviews(0)
             .build();
 
         mockMvc.perform(post("/api/products")

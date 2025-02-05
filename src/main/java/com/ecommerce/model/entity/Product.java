@@ -2,7 +2,11 @@ package com.ecommerce.model.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -81,10 +85,12 @@ public class Product {
     private Boolean active = true;
 
     @Column(columnDefinition = "jsonb")
-    private String attributes;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> attributes;
 
     @Column(columnDefinition = "jsonb")
-    private String interactions;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> interactions;
 
     @Version
     private Long version;
@@ -112,13 +118,3 @@ public class Product {
     }
 
 } 
-
-
-
-
-
-
-
-
-
-

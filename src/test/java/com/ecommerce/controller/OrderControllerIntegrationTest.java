@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.OrderItem;
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -32,19 +33,23 @@ public class OrderControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ProductRepository productRepository;
+
     @Test
     @WithMockUser
     void createOrder_Success() throws Exception {
         Product product = Product.builder()
-            .id(1L)
             .name("Test Product")
             .price(new BigDecimal("99.99"))
-            .version(0L)
-            .active(true)
             .stockInQuantity(10)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
+            .active(true)
+            .attributes(Collections.emptyMap())
+            .interactions(Collections.emptyMap())
+            .numberOfReviews(0)
             .build();
+        
+        product = productRepository.save(product);
 
         OrderItem orderItem = OrderItem.builder()
             .product(product)
@@ -55,12 +60,9 @@ public class OrderControllerIntegrationTest {
         Order order = Order.builder()
             .orderDate(LocalDateTime.now())
             .status(Order.Status.PENDING)
-            .totalAmount(new BigDecimal("199.99"))
-            .version(0L)
+            .totalAmount(product.getPrice().multiply(new BigDecimal(2)))
+            .items(Collections.singletonList(orderItem))
             .build();
-
-        order.setItems(Collections.singletonList(orderItem));
-        orderItem.setOrder(order);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
