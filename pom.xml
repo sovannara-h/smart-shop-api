@@ -187,6 +187,7 @@
                         <include>com.ecommerce.performance.*</include>
                     </includes>
                     <jvmArgs>
+                        <jvmArg>-Dspring.profiles.active=dev</jvmArg>
                         <jvmArg>-Xms512m</jvmArg>
                         <jvmArg>-Xmx2048m</jvmArg>
                     </jvmArgs>
