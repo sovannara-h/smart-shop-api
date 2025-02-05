@@ -149,6 +149,7 @@ public class ProductController {
 
     @Operation(summary = "Récupérer tous les produits", description = "Retourne une liste paginée de tous les produits")
     @GetMapping
+    @Cacheable(value = "products", key = "#page + '-' + #size", unless = "#result.body.data.content.isEmpty()")
     public ResponseEntity<ApiResponse<Page<Product>>> getAllProducts(
             @Parameter(description = "Numéro de page (commence à 0)")
             @RequestParam(defaultValue = "0") int page,
@@ -172,7 +173,7 @@ public class ProductController {
 
     @Operation(summary = "Récupérer un produit", description = "Retourne un produit par son ID")
     @GetMapping("/{id}")
-    @Cacheable(value = "products", key = "#id")
+    @Cacheable(value = "products", key = "#id", unless = "#result.statusCode.is4xxClientError()")
     @RateLimiter(name = "getProduct")
     public ResponseEntity<ApiResponse<Product>> getProductById(
         @Parameter(description = "ID du produit")
