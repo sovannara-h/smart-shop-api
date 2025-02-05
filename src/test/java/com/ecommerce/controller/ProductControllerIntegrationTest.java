@@ -45,6 +45,7 @@ public class ProductControllerIntegrationTest {
             .price(new BigDecimal("99.99"))
             .stockInQuantity(10)
             .active(true)
+            .attributes("{}")
             .build();
 
         mockMvc.perform(post("/api/products")
