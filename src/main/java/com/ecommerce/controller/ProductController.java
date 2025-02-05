@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ecommerce.exception.ProductException;
 import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.entity.Product;
-import com.ecommerce.service.interfaces.ProductService;
+import com.ecommerce.service.impl.ProductServiceImpl;
 
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.annotation.Timed;
@@ -45,9 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProductController {
 
-    private final ProductService productService;
+    private final ProductServiceImpl productService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductServiceImpl productService) {
         this.productService = productService;
     }
 
