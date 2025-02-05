@@ -4,10 +4,12 @@ import java.time.Duration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 
 @Configuration
+@Profile("!dev")
 public class RateLimitConfig {
     @Bean
     public RateLimiterConfig productRateLimiterConfig() {
