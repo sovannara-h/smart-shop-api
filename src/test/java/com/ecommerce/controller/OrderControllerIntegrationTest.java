@@ -39,20 +39,28 @@ public class OrderControllerIntegrationTest {
             .id(1L)
             .name("Test Product")
             .price(new BigDecimal("99.99"))
-            .build();
-
-        OrderItem orderItem = OrderItem.builder()
-            .product(product)
-            .quantity(2)
-            .unitPrice(product.getPrice())
+            .version(0L)
+            .active(true)
+            .stockInQuantity(10)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
             .build();
 
         Order order = Order.builder()
             .orderDate(LocalDateTime.now())
             .status(Order.Status.PENDING)
             .totalAmount(new BigDecimal("199.99"))
-            .items(Collections.singletonList(orderItem))
+            .version(0L)
             .build();
+
+        OrderItem orderItem = OrderItem.builder()
+            .product(product)
+            .quantity(2)
+            .unitPrice(product.getPrice())
+            .order(order)
+            .build();
+
+        order.setItems(Collections.singletonList(orderItem));
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
