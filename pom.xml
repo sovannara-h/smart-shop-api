@@ -15,6 +15,8 @@
         <springdoc.version>2.3.0</springdoc.version>
         <gatling.version>3.9.5</gatling.version>
         <maven-compiler.version>3.11.0</maven-compiler.version>
+        <scala.version>2.13.12</scala.version>
+        <scala.binary.version>2.13</scala.binary.version>
     </properties>
 
     <parent>
@@ -123,7 +125,7 @@
         <dependency>
             <groupId>io.gatling.highcharts</groupId>
             <artifactId>gatling-charts-highcharts</artifactId>
-            <version>3.7.6</version>
+            <version>${gatling.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -133,6 +135,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -166,6 +174,47 @@
                         </path>
                     </annotationProcessorPaths>
                     <fork>true</fork>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>4.6.0</version>
+                <configuration>
+                    <simulationClass>com.ecommerce.performance.ProductSimulation</simulationClass>
+                    <runMultipleSimulations>false</runMultipleSimulations>
+                    <includes>
+                        <include>com.ecommerce.performance.*</include>
+                    </includes>
+                    <jvmArgs>
+                        <jvmArg>-Xms512m</jvmArg>
+                        <jvmArg>-Xmx2048m</jvmArg>
+                    </jvmArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.8.1</version>
+                <executions>
+                    <execution>
+                        <id>scala-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <scalaVersion>${scala.version}</scalaVersion>
+                    <args>
+                        <arg>-deprecation</arg>
+                        <arg>-feature</arg>
+                    </args>
+                    <jvmArgs>
+                        <jvmArg>-Xms64m</jvmArg>
+                        <jvmArg>-Xmx1024m</jvmArg>
+                    </jvmArgs>
                 </configuration>
             </plugin>
         </plugins>
