@@ -9,3 +9,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+  app:
+  resilience:
+    rate-limit: 10000
+    concurrent-calls: 1000
