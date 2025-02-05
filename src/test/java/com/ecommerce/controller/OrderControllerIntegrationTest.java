@@ -46,6 +46,12 @@ public class OrderControllerIntegrationTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
+        OrderItem orderItem = OrderItem.builder()
+            .product(product)
+            .quantity(2)
+            .unitPrice(product.getPrice())
+            .build();
+
         Order order = Order.builder()
             .orderDate(LocalDateTime.now())
             .status(Order.Status.PENDING)
@@ -53,14 +59,8 @@ public class OrderControllerIntegrationTest {
             .version(0L)
             .build();
 
-        OrderItem orderItem = OrderItem.builder()
-            .product(product)
-            .quantity(2)
-            .unitPrice(product.getPrice())
-            .order(order)
-            .build();
-
         order.setItems(Collections.singletonList(orderItem));
+        orderItem.setOrder(order);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
