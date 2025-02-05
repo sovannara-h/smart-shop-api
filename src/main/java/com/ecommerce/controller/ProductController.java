@@ -29,6 +29,7 @@ import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.entity.Product;
 import com.ecommerce.service.impl.ProductServiceImpl;
 
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,7 +55,8 @@ public class ProductController {
     @Operation(summary = "Créer un nouveau produit")
     @Timed(value = "product.creation.time", description = "Temps de création d'un produit")
     @PostMapping
-    @RateLimiter(name = "createProduct")
+    @RateLimiter(name = "createProduct", fallbackMethod = "createProductFallback")
+    @Bulkhead(name = "createProduct", fallbackMethod = "createProductFallback")
     public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody Product product) {
         try {
             Product created = productService.createProduct(product);
@@ -65,6 +67,13 @@ public class ProductController {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, null, null, e.getMessage(), LocalDateTime.now()));
         }
+    }
+
+    private ResponseEntity<ApiResponse<Product>> createProductFallback(Product product, Exception ex) {
+        log.warn("Fallback appelé pour la création du produit", ex);
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(new ApiResponse<>(false, null, "Service temporairement surchargé", ex.getMessage(), LocalDateTime.now()));
     }
 
     @Operation(summary = "Mettre à jour un produit", description = "Met à jour un produit existant")
