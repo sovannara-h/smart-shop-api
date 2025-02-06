@@ -64,7 +64,7 @@ public class ProductControllerIntegrationTest {
     @Test
     @WithMockUser
     void getProductById_NotFound() throws Exception {
-        mockMvc.perform(get("/api/products/999")
+        mockMvc.perform(get("/api/products/999999")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
