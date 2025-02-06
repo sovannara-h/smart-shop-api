@@ -48,7 +48,6 @@ public class MultiLevelCacheConfig {
     }
 
     // Configuration des "frigos connectés" (Redis Cluster)
-    // C'est comme avoir plusieurs frigos qui communiquent entre eux
     @Bean
     public RedisClusterConfiguration redisClusterConfiguration() {
         RedisClusterConfiguration config = new RedisClusterConfiguration();
