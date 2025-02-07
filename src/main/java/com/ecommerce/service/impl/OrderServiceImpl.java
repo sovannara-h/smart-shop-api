@@ -9,9 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.exception.OrderException;
+import com.ecommerce.exception.UserNotFoundException;
+import com.ecommerce.model.dto.OrderCreateDTO;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.Order.Status;
+import com.ecommerce.model.entity.User;
 import com.ecommerce.repository.OrderRepository;
+import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.interfaces.OrderService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,22 +26,32 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository) {
         this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     @Transactional
-    public Order createOrder(Order order) {
-        log.debug("Création d'une nouvelle commande");
+    public Order createOrder(OrderCreateDTO orderDTO) {
+        Order order = new Order();
+        order.setCustomerEmail(orderDTO.getEmail());
+        
 
-        try {
-            return orderRepository.save(order);
-        }  catch (Exception e) {
-            log.error("Erreur inattendue lors de la création de la commande", e);
-            throw new OrderException("Erreur lors de la création de la commande: " + e.getMessage());
+        if (orderDTO.getUserId() != null) {
+            User user = userRepository.findById(orderDTO.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
+            order.setUser(user);
         }
+        
+        order.setShippingName(orderDTO.getShippingName());
+        order.setShippingAddress(orderDTO.getShippingAddress());
+        order.setShippingPhone(orderDTO.getShippingPhone());
+        
+        
+        return orderRepository.save(order);
     }
 
     @Override

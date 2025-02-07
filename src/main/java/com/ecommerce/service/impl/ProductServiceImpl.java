@@ -78,14 +78,14 @@ public class ProductServiceImpl implements ProductService {
     public Product updateProduct(Long id, Product product) {
         log.debug("Mise à jour du produit avec l'ID : {}", id);
         _validateProduct(product);
-        
+
         try {
             Product existingProduct = findProductById(id);
-            
+
             if (!existingProduct.getVersion().equals(product.getVersion())) {
                 throw new ProductConcurrencyException("Le produit a été modifié par un autre utilisateur");
             }
-            
+
             _updateProductFields(existingProduct, product);
             return productRepository.save(existingProduct);
         } catch (ProductNotFoundException | ProductConcurrencyException e) {

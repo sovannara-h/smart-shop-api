@@ -15,5 +15,7 @@ export type Order = {
     totalAmount: number;
     items: OrderItem[];
     version: number;
+    createdAt: Date;
+    updatedAt: Date;
   }
   

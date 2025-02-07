@@ -26,13 +26,37 @@ export function Dashboard() {
         const response = await axios.get("http://localhost:8080/api/products/count");
         return response.data.data;
     }
-});
-
-
+  });
 
   const orders = ordersData?.data;
-  console.log(orders, productCount)
+  
+  const getDailyRevenue = (orders: Order[]) => {
+    if (!orders?.length) return [];
+    
+    const dailyRevenue = [];
+    const endDate = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(endDate.getDate() - i);
+      
+      const dayOrders = orders.filter((order: Order) => 
+        new Date(order.createdAt).toDateString() === date.toDateString()
+      );
+      
+      const revenue = dayOrders.reduce((acc: number, curr: Order) => acc + curr.totalAmount, 0);
+      
+      dailyRevenue.unshift({
+        date: date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+        revenue
+      });
+    }
+    
+    return dailyRevenue;
+  };
 
+  const revenueWeekData = getDailyRevenue(orders);
+  console.log(orders, productCount, revenueWeekData);
 
   const convertIntToCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -46,6 +70,8 @@ export function Dashboard() {
     const total = orders.reduce((a,c) => c.totalAmount + a, 0)
     return convertIntToCurrency(total);
   }
+
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -75,7 +101,7 @@ export function Dashboard() {
             />
             <StatsCard
               title="Products"
-              value={productCount.toLocaleString('en-US')}
+              value={(productCount || 0).toLocaleString('en-US')}
               icon={<Package className="h-4 w-4 text-muted-foreground" />}
               description="86 added today"
             />
@@ -96,7 +122,7 @@ export function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <Overview />
+                <Overview  data={revenueWeekData}/>
               </CardContent>
             </Card>
             

@@ -35,7 +35,7 @@ function App() {
           </div>
         </header>
         
-        <main className="px-4 py-8 container">
+        <main className="px-4 py-8">
 
           <Routes>
             <Route path="/" element={<Dashboard />} />

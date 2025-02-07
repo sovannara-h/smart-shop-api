@@ -1,37 +1,16 @@
-import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts"
+import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts";
 
-const data = [
-  {
-    revenue: 400,
-    date: "Jan 1",
-  },
-  {
-    revenue: 300,
-    date: "Jan 2",
-  },
-  {
-    revenue: 500,
-    date: "Jan 3",
-  },
-  {
-    revenue: 450,
-    date: "Jan 4",
-  },
-  {
-    revenue: 470,
-    date: "Jan 5",
-  },
-  {
-    revenue: 600,
-    date: "Jan 6",
-  },
-  {
-    revenue: 750,
-    date: "Jan 7",
-  },
-]
 
-export function Overview() {
+type OverviewProps = {
+  data: {
+    date: string;
+    revenue: number
+  }[]
+}
+
+export function Overview(props: OverviewProps) {
+  const {data} = props;
+  
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data}>
