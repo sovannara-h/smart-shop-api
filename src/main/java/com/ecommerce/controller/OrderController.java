@@ -1,6 +1,7 @@
 package com.ecommerce.controller;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -201,6 +202,24 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(false, null, null, "Erreur serveur", LocalDateTime.now()));
         }
+    }
+
+    @Operation(summary = "Récupérer les commandes par mois")
+    @GetMapping("/month")
+    public ResponseEntity<ApiResponse<List<Order>>> getOrdersPerMonth(
+        @Parameter(description = "Mois")
+        @RequestParam @Positive Integer month
+        ) {
+            try {
+                List<Order> orders =  orderServiceImpl.findOrdersByMonth(month);
+                return ResponseEntity.ok()
+                    .body(new ApiResponse<>(true,  orders, "Commandes récupérer avec succês", null, LocalDateTime.now()));
+            } catch (Exception e) {
+                // TODO: handle exception
+                log.error("Erreur serveur lors de la suppression de la commande: {}", month, e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, null, null, "Erreur serveur", LocalDateTime.now()));
+            }
     }
 
 }

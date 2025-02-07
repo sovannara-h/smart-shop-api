@@ -123,5 +123,8 @@ public class ProductServiceImpl implements ProductService {
         return findProductsByCategory(category, pageable);
     }
 
+    public long getProductCount() {
+        return productRepository.count();
+    }
     
 }

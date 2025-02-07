@@ -1,6 +1,7 @@
 package com.ecommerce.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +70,33 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderException("Erreur lors de la recherche des commandes par statut: " + e.getMessage());
         }
     }
+    public List<Order> findOrdersByMonth(Integer month) {
+        if (month < 0) {
+            throw new IllegalArgumentException("Le mois ne peut pas être plus petit que 0");
+        }
+        
+        if (month > 12) {
+            throw new IllegalArgumentException("Le mois ne peut pas être supérieur à 12");
+        }
+        
+        try {
+            LocalDateTime startOfMonth = LocalDateTime.now()
+                .withMonth(month)
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0);
+                
+            LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
+            
+            return orderRepository.findBetweenDates(startOfMonth, endOfMonth, Pageable.unpaged())
+                .getContent();
+                
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération des commandes par mois", e);
+            throw new OrderException("Erreur lors de la récupération des commandes par mois: " + e.getMessage());
+        }
+    }
 
     @Override
     public Page<Order> findOrdersBetweenDates(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
@@ -116,4 +144,5 @@ public class OrderServiceImpl implements OrderService {
         }
     }
     
+
 }

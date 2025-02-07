@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -153,13 +154,20 @@ public class ProductController {
             @Parameter(description = "Numéro de page (commence à 0)")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Nombre d'éléments par page")
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort
     ) {
         try {
-            Page<Product> products = productService.findAllProducts(PageRequest.of(page, size));
+            String[] sortParams = sort.split(",");
+            String sortField = sortParams[0];
+            Sort.Direction direction = sortParams[1].equalsIgnoreCase("desc") ? 
+                Sort.Direction.DESC : Sort.Direction.ASC;
+            
+            Page<Product> products = productService.findAllProducts(
+                PageRequest.of(page, size, Sort.by(direction, sortField))
+            );
             return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES))
-            .body(new ApiResponse<>(true, products, "Produits récupérés avec succès", null, LocalDateTime.now()));
+                .body(new ApiResponse<>(true, products, "Produits récupérés avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des produits", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -196,5 +204,18 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse<Long>> getProductCount() {
+    try {
+        long count = productService.getProductCount();
+        return ResponseEntity.ok()
+            .body(new ApiResponse<>(true, count, "Nombre total de produits récupéré avec succès", null, LocalDateTime.now()));
+    } catch (Exception e) {
+        log.error("Erreur lors de la récupération du nombre de produits", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiResponse<>(false, null, null, "Erreur serveur: " + e.getMessage(), LocalDateTime.now()));
+    }
+}
 
 } 
