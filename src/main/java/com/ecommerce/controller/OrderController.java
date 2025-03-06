@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.exception.OrderException;
 import com.ecommerce.model.dto.ApiResponse;
+import com.ecommerce.model.dto.OrderCreateDTO;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.Order.Status;
 import com.ecommerce.service.impl.OrderServiceImpl;
@@ -54,19 +55,19 @@ public class OrderController {
     @Timed(value = "order.creation.time", description = "Temps de création d'une commande")
     @PostMapping
     @RateLimiter(name = "createOrder")
-    public ResponseEntity<ApiResponse<Order>> createOrder(@Valid @RequestBody Order order) {
+    public ResponseEntity<ApiResponse<Order>> createOrder(@Valid @RequestBody OrderCreateDTO orderDTO) {
         try {
-            Order created = orderServiceImpl.createOrder(order);
+            Order created = orderServiceImpl.createOrder(orderDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(true, created, "Commande créé avec succès", null, LocalDateTime.now()));
+                .body(new ApiResponse<>(true, created, "Commande créée avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
-            log.error("Erreur lors de la création du produit", e);
+            log.error("Erreur lors de la création de la commande", e);
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, null, null, e.getMessage(), LocalDateTime.now()));
         }
     }
 
-    @Operation(summary = "Récupérer tous les produits", description = "Retourne une liste paginée de tous les produits")
+    @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste paginée de toutes les commandes")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Order>>> getAllOrders(
         @Parameter(description = "Numéro de page (commence à 0)")

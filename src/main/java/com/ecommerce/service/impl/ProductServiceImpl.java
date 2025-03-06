@@ -1,8 +1,9 @@
 package com.ecommerce.service.impl;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import com.ecommerce.exception.ProductConcurrencyException;
 import com.ecommerce.exception.ProductException;
 import com.ecommerce.exception.ProductNotFoundException;
 import com.ecommerce.exception.ProductValidationException;
+import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Category;
 import com.ecommerce.model.entity.Product;
 import com.ecommerce.repository.ProductRepository;
@@ -34,12 +36,9 @@ public class ProductServiceImpl implements ProductService {
 
     private void _validateProduct(Product product) {
         List<String> errors = new ArrayList<>();
-
-        if (product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
-            errors.add("Le prix ne peut pas être négatif");
-        }
-        if (product.getStockInQuantity() < 0) {
-            errors.add("Le stock ne peut pas être négatif");
+        
+        if (!product.getHasVariants() && product.getVariants().isEmpty()) {
+            errors.add("Le produit doit avoir au moins une variante");
         }
         
         if (!errors.isEmpty()) {
@@ -51,18 +50,29 @@ public class ProductServiceImpl implements ProductService {
         existing.setName(updated.getName());
         existing.setDescription(updated.getDescription());
         existing.setCategories(updated.getCategories());
-        existing.setPrice(updated.getPrice());
-        existing.setStockInQuantity(updated.getStockInQuantity());
         existing.setActive(updated.getActive());
+        existing.setHasVariants(updated.getHasVariants());
     }
 
     @Override
     @Transactional
-    public Product createProduct(Product product) {
-        log.debug("Création d'un nouveau produit : {}", product.getName());
-        _validateProduct(product);
+    public Product createProduct(ProductCreateDTO dto) {
+        log.debug("Création d'un nouveau produit : {}", dto.getName());
         
         try {
+            Product product = new Product();
+            product.setName(dto.getName());
+            product.setDescription(dto.getDescription());
+            product.setActive(dto.getActive());
+            product.setHasVariants(dto.getHasVariants());
+    
+            Set<Category> categories = dto.getCategories().stream()
+                .map(id -> categoryRepository.findById(id)
+                    .orElseThrow(() -> new CategoryNotFoundException("Catégorie non trouvée: " + id)))
+                .collect(Collectors.toSet());
+            product.setCategories(categories);
+            
+            _validateProduct(product);
             return productRepository.save(product);
         } catch (DataIntegrityViolationException e) {
             log.error("Erreur d'intégrité des données lors de la création du produit", e);

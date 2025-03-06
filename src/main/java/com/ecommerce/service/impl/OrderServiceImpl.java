@@ -20,8 +20,8 @@ import com.ecommerce.service.interfaces.OrderService;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Service
 @Slf4j
+@Service
 @Transactional
 public class OrderServiceImpl implements OrderService {
 

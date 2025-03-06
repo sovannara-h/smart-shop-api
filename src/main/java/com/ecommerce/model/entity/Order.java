@@ -39,7 +39,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "entities")
+@Table(name = "orders")
 public class Order {
 
     public enum Status {

@@ -6,8 +6,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ecommerce.model.entity.Order;
-import com.ecommerce.model.entity.OrderItem;
+import com.ecommerce.model.dto.OrderCreateDTO;
+import com.ecommerce.model.dto.OrderItemDTO;
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.model.entity.ProductVariant;
 import com.ecommerce.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,32 +43,29 @@ public class OrderControllerIntegrationTest {
     void createOrder_Success() throws Exception {
         Product product = Product.builder()
             .name("Test Product")
-            .price(new BigDecimal("99.99"))
-            .stockInQuantity(10)
+            .hasVariants(true)
+            .variants(new HashSet<>(Arrays.asList(
+                ProductVariant.builder()
+                    .sku("TEST-1")
+                    .price(new BigDecimal("99.99"))
+                    .stockQuantity(10)
+                    .build()
+            )))
             .active(true)
-            .attributes(Collections.emptyMap())
-            .interactions(Collections.emptyMap())
-            .numberOfReviews(0)
             .build();
         
         product = productRepository.save(product);
 
-        OrderItem orderItem = OrderItem.builder()
-            .product(product)
-            .quantity(2)
-            .unitPrice(product.getPrice())
-            .build();
-
-        Order order = Order.builder()
-            .orderDate(LocalDateTime.now())
-            .status(Order.Status.PENDING)
-            .totalAmount(product.getPrice().multiply(new BigDecimal(2)))
-            .items(Collections.singletonList(orderItem))
-            .build();
+        OrderCreateDTO orderDTO = new OrderCreateDTO();
+        orderDTO.setEmail("test@example.com");
+        orderDTO.setShippingName("John Doe");
+        orderDTO.setShippingAddress("123 Test St");
+        orderDTO.setShippingPhone("0123456789");
+        orderDTO.setItems(List.of(new OrderItemDTO(product.getId(), 2)));
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(order)))
+                .content(objectMapper.writeValueAsString(orderDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }

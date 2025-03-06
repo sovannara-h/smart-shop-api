@@ -6,7 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.model.entity.ProductVariant;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -45,12 +47,15 @@ public class ProductControllerIntegrationTest {
         Product product = Product.builder()
             .name("Test Product")
             .description("Test Description")
-            .price(new BigDecimal("99.99"))
-            .stockInQuantity(10)
+            .hasVariants(true)
+            .variants(new HashSet<>(Arrays.asList(
+                ProductVariant.builder()
+                    .sku("TEST-1")
+                    .price(new BigDecimal("99.99"))
+                    .stockQuantity(10)
+                    .build()
+            )))
             .active(true)
-            .attributes(Collections.emptyMap())
-            .interactions(Collections.emptyMap())
-            .numberOfReviews(0)
             .build();
 
         mockMvc.perform(post("/api/products")

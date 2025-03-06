@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.exception.ProductException;
 import com.ecommerce.model.dto.ApiResponse;
+import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Product;
 import com.ecommerce.service.impl.ProductServiceImpl;
 
@@ -39,11 +40,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 @Tag(name = "Produits", description = "API de gestion des produits")
 @Validated
-@Slf4j
 public class ProductController {
 
     private final ProductServiceImpl productService;
@@ -56,9 +57,9 @@ public class ProductController {
     @Timed(value = "product.creation.time", description = "Temps de création d'un produit")
     @PostMapping
     @RateLimiter(name = "createProduct")
-    public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody Product product) {
+    public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
         try {
-            Product created = productService.createProduct(product);
+            Product created = productService.createProduct(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(true, created, "Produit créé avec succès", null, LocalDateTime.now()));
         } catch (ProductException e) {

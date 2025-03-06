@@ -2,12 +2,14 @@ package com.ecommerce.model.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,13 +17,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,22 +35,19 @@ import lombok.NoArgsConstructor;
 // - name
 // - description
 // - category
-// - price 
 // - rating
 // - numberOfReviews
 // - active
-// - attributes
 // - interactions
 // - version
-// - stockQuantity
 // - createdAt
 // - updatedAt
 
 @Data
+@Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
 @Table(name = "products")
 public class Product {
     @Id
@@ -57,7 +55,7 @@ public class Product {
     private Long id;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private Set<Category> categories;
+    private Set<Category> categories = new HashSet<>();
 
     @Column(nullable = false)
     @NotBlank(message = "Name is required.")
@@ -67,10 +65,10 @@ public class Product {
     @Column(length = 1000)
     private String description;
     
-    @Column(precision = 10, scale = 2, nullable = false)
-    @NotNull(message = "Price is required.")
-    @Min(value = 0)
-    private BigDecimal price;
+    // @Column(precision = 10, scale = 2, nullable = false)
+    // @NotNull(message = "Price is required.")
+    // @Min(value = 0)
+    // private BigDecimal price;
 
     @Column(precision = 3, scale = 2)
     @Builder.Default
@@ -84,10 +82,13 @@ public class Product {
     @Builder.Default
     private Boolean active = true;
 
-    @Column(columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, Object> attributes;
+    @Column(name = "has_variants")
+    @Builder.Default
+    private Boolean hasVariants = false;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private Set<ProductVariant> variants = new HashSet<>();
+    
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> interactions;
@@ -95,10 +96,10 @@ public class Product {
     @Version
     private Long version;
 
-    @Column(name = "stock_quantity")
-    @NotNull(message = "La quantité en stock est obligatoire")
-    @Min(value = 0)
-    private Integer stockInQuantity;
+    // @Column(name = "stock_quantity")
+    // @NotNull(message = "La quantité en stock est obligatoire")
+    // @Min(value = 0)
+    // private Integer stockInQuantity;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

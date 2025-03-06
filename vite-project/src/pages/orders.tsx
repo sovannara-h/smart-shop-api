@@ -71,6 +71,7 @@ export function Orders() {
   const orders: Order[] = data?.data.content || [];
   
   if(isLoading) return <p>Chargement ...</p>
+  
   return (
     <>
       <div className="flex items-center justify-between">

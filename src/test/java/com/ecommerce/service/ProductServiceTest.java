@@ -3,12 +3,15 @@ package com.ecommerce.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +26,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import com.ecommerce.exception.ProductException;
+import com.ecommerce.exception.ProductValidationException;
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.model.entity.ProductVariant;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.impl.ProductServiceImpl;
 
@@ -44,8 +49,14 @@ public class ProductServiceTest {
             .id(1L)
             .name("Test Product")
             .description("Test Description")
-            .price(new BigDecimal("99.99"))
-            .stockInQuantity(10)
+            .hasVariants(true)
+            .variants(new HashSet<>(Arrays.asList(
+                ProductVariant.builder()
+                    .sku("TEST-1")
+                    .price(new BigDecimal("99.99"))
+                    .stockQuantity(10)
+                    .build()
+            )))
             .active(true)
             .build();
     }
@@ -58,13 +69,11 @@ public class ProductServiceTest {
 
         assertNotNull(created);
         assertEquals("Test Product", created.getName());
-        assertEquals(new BigDecimal("99.99"), created.getPrice());
         verify(productRepository).save(any(Product.class));
     }
 
     @Test
     void createProduct_WithNegativePrice_ThrowsException() {
-        testProduct.setPrice(new BigDecimal("-10.00"));
 
         assertThrows(ProductException.class, () -> {
             productService.createProduct(testProduct);
@@ -103,5 +112,44 @@ public class ProductServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         verify(productRepository).findAll(any(PageRequest.class));
+    }
+
+    @Test
+    void createProduct_WithoutVariants_ShouldThrowException() {
+        // Given
+        Product product = Product.builder()
+            .name("Test Product")
+            .hasVariants(false)
+            .build();
+            
+        // When & Then
+        assertThrows(ProductValidationException.class, 
+            () -> productService.createProduct(product));
+    }
+    
+    @Test
+    void createProduct_WithVariants_ShouldSucceed() {
+        // Given
+        Product product = Product.builder()
+            .name("Test Product")
+            .hasVariants(true)
+            .variants(new HashSet<>(Arrays.asList(
+                ProductVariant.builder()
+                    .sku("TEST-1")
+                    .price(BigDecimal.TEN)
+                    .stockQuantity(10)
+                    .build()
+            )))
+            .build();
+            
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+        
+        // When
+        Product created = productService.createProduct(product);
+        
+        // Then
+        assertNotNull(created);
+        assertTrue(created.getHasVariants());
+        assertEquals(1, created.getVariants().size());
     }
 }

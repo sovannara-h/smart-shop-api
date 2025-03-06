@@ -9,7 +9,6 @@ export type Product = {
     rating: number;
     numberOfReviews: number;
     active: boolean;
-    attributes: Record<string, any>;
     interactions: Record<string, any>;
     version: number;
     stockInQuantity: number;

@@ -1,0 +1,32 @@
+src/
+├── main/
+│   ├── java/
+│   │   └── com/
+│   │       └── ecommerce/
+│   │           ├── controller/
+│   │           │   └── OrderController.java
+│   │           ├── model/
+│   │           │   ├── dto/
+│   │           │   │   ├── OrderCreateDTO.java 
+│   │           │   │   └── OrderItemDTO.java
+│   │           │   └── entity/
+│   │           │       ├── Order.java
+│   │           │       ├── OrderItem.java
+│   │           │       ├── Product.java
+│   │           │       └── User.java
+│   │           ├── repository/
+│   │           │   ├── OrderRepository.java
+│   │           │   ├── ProductRepository.java
+│   │           │   └── UserRepository.java
+│   │           └── service/
+│   │               ├── impl/
+│   │               │   └── OrderServiceImpl.java
+│   │               └── OrderService.java
+│   └── resources/
+│       └── application.properties
+└── test/
+    └── java/
+        └── com/
+            └── ecommerce/
+                └── controller/
+                    └── OrderControllerIntegrationTest.java
