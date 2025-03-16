@@ -22,7 +22,7 @@ class ProductSimulation extends Simulation {
   val browseScenario = scenario("Browse Products")
     .exec(
       http("Get All Products - Page 0")
-        .get("/api/products?page=0&size=10")
+        .get("/api/v1/products?page=0&size=10")
         .check(status.is(200))
         .check(jsonPath("$.data.content[0].id").saveAs("productId"))
     )
@@ -30,13 +30,13 @@ class ProductSimulation extends Simulation {
     .pause(500.milliseconds)
     .exec(
       http("Get Single Product")
-        .get("/api/products/#{productId}")  // Changement de ${} à #{}
+        .get("/api/v1/products/#{productId}")  // Changement de ${} à #{}
         .check(status.is(200))
     )
     .pause(500.milliseconds)
     .exec(
       http("Get All Products - Page 1")
-        .get("/api/products?page=1&size=10")
+        .get("/api/v1/products?page=1&size=10")
         .check(status.is(200))
     )
 
@@ -44,7 +44,7 @@ class ProductSimulation extends Simulation {
     .feed(productFeeder)
     .exec(
       http("Create New Product")
-        .post("/api/products")
+        .post("/api/v1/products")
         .body(StringBody("""{"name":"${name}","price":${price},"description":"${description}","stockInQuantity":${stockInQuantity}}"""))
         .check(status.in(201, 429))
     )

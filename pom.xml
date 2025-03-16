@@ -230,12 +230,12 @@
                 <version>1.1.2</version>
                 <configuration>
                     <outputDirectory>${project.build.directory}/plantuml</outputDirectory>
-                    <sourceFiles>
-                        <directory>${project.basedir}/src/main/java</directory>
-                        <includes>
-                            <include>**/*.java</include>
-                        </includes>
-                    </sourceFiles>
+                    <outputFilename>class-diagram.puml</outputFilename>
+                    <scanPackages>
+                        <scanPackage>com.ecommerce.model.entity</scanPackage>
+                    </scanPackages>
+                    <includeMainSources>true</includeMainSources>
+                    <includeDependencies>false</includeDependencies>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,7 +1,9 @@
 package com.ecommerce.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -11,33 +13,37 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.exception.CategoryNotFoundException;
 import com.ecommerce.exception.ProductConcurrencyException;
 import com.ecommerce.exception.ProductException;
 import com.ecommerce.exception.ProductNotFoundException;
 import com.ecommerce.exception.ProductValidationException;
+import com.ecommerce.exception.SessionExpiredException;
 import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Category;
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.model.entity.SessionAware;
+import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.interfaces.ProductService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
 @Transactional
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-
-    public ProductServiceImpl(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private final CategoryRepository categoryRepository;
+    private final EditSessionService editSessionService;
 
     private void _validateProduct(Product product) {
         List<String> errors = new ArrayList<>();
         
-        if (!product.getHasVariants() && product.getVariants().isEmpty()) {
+        if (Boolean.TRUE.equals(product.getHasVariants()) && product.getVariants().isEmpty()) {
             errors.add("Le produit doit avoir au moins une variante");
         }
         
@@ -63,11 +69,11 @@ public class ProductServiceImpl implements ProductService {
             Product product = new Product();
             product.setName(dto.getName());
             product.setDescription(dto.getDescription());
-            product.setActive(dto.getActive());
+            product.setActive(dto.getActive() != null ? dto.getActive() : true);
             product.setHasVariants(dto.getHasVariants());
     
             Set<Category> categories = dto.getCategories().stream()
-                .map(id -> categoryRepository.findById(id)
+                .<Category>map(id -> categoryRepository.findById(id)
                     .orElseThrow(() -> new CategoryNotFoundException("Catégorie non trouvée: " + id)))
                 .collect(Collectors.toSet());
             product.setCategories(categories);
@@ -133,8 +139,58 @@ public class ProductServiceImpl implements ProductService {
         return findProductsByCategory(category, pageable);
     }
 
+    @Transactional
+    public Product updateProductInSession(String sessionId, Long id, Product product) {
+        Product existingProduct = findProductById(id);
+    
+        // Vérifier que le produit est bien dans la session
+        Map<String, Object> sessionInfo = existingProduct.getSessionInfo();
+        if (sessionInfo == null || !sessionId.equals(sessionInfo.get("sessionId"))) {
+            throw new IllegalStateException("Le produit n'est pas dans la session spécifiée");
+        }
+        
+        _updateProductFields(existingProduct, product);
+        
+        // Conserver les informations de session
+        existingProduct.setSessionInfo(sessionInfo);
+        
+        return productRepository.save(existingProduct);
+    }
+
     public long getProductCount() {
         return productRepository.count();
     }
     
+    /**
+     * Crée un produit dans une session d'édition
+     */
+    @Transactional
+    public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
+        // Vérifier que la session est valide
+        if (!editSessionService.isSessionValid(sessionId)) {
+            throw new SessionExpiredException("La session a expiré ou n'existe pas");
+        }
+        
+        // Créer le produit
+        Product product = new Product();
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setActive(false); // Par défaut inactif jusqu'à confirmation
+        
+        // Autres propriétés selon votre modèle
+        
+        // Marquer comme étant dans une session
+        Map<String, Object> sessionInfo = new HashMap<>();
+        sessionInfo.put("sessionId", sessionId);
+        sessionInfo.put("status", "TEMPORARY");
+        ((SessionAware) product).setSessionInfo(sessionInfo);
+        
+        // Sauvegarder le produit
+        Product savedProduct = productRepository.save(product);
+        
+        // Enregistrer dans l'audit de session
+        editSessionService.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
+        
+        return savedProduct;
+    }
 }

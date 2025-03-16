@@ -2,13 +2,11 @@ package com.ecommerce.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -78,7 +76,6 @@ public class OrderController {
         try {
             Page<Order> orders = orderServiceImpl.findAllOrders(PageRequest.of(page, size));
             return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES))
                 .body(new ApiResponse<>(true, orders, "Commandes récupérés avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des commandes", e);
@@ -102,7 +99,6 @@ public class OrderController {
         try {
             Page<Order> orders = orderServiceImpl.findOrdersBetweenDates(startDate, endDate, PageRequest.of(page, size));
             return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES))
                 .body(new ApiResponse<>(true, orders, "Commandes récupérées avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des commandes par date", e);
@@ -124,7 +120,6 @@ public class OrderController {
         try {
             Page<Order> orders = orderServiceImpl.findOrdersByStatus(status, PageRequest.of(page, size));
             return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES))
                 .body(new ApiResponse<>(true, orders, "Commandes récupérées avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des commandes par statut", e);
@@ -146,7 +141,6 @@ public class OrderController {
         try {
             Order order = orderServiceImpl.findOrderById(id);
             return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES))
                 .eTag(String.valueOf(order.getVersion()))
                 .body(new ApiResponse<>(true, order, "Commande récupérés avec succès", null, LocalDateTime.now()));
                 

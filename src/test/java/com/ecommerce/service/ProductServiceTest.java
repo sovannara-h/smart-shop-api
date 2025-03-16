@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 
 import com.ecommerce.exception.ProductException;
 import com.ecommerce.exception.ProductValidationException;
+import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Product;
 import com.ecommerce.model.entity.ProductVariant;
 import com.ecommerce.repository.ProductRepository;
@@ -63,9 +65,16 @@ public class ProductServiceTest {
 
     @Test
     void createProduct_Success() {
+        ProductCreateDTO dto = new ProductCreateDTO();
+        dto.setName("Test Product");
+        dto.setDescription("Test Description");
+        dto.setHasVariants(true);
+        dto.setActive(true);
+        dto.setCategories(new ArrayList<>());
+
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
 
-        Product created = productService.createProduct(testProduct);
+        Product created = productService.createProduct(dto);
 
         assertNotNull(created);
         assertEquals("Test Product", created.getName());
@@ -74,9 +83,12 @@ public class ProductServiceTest {
 
     @Test
     void createProduct_WithNegativePrice_ThrowsException() {
+        ProductCreateDTO dto = new ProductCreateDTO();
+        dto.setName("Test Product");
+        dto.setHasVariants(false);
 
         assertThrows(ProductException.class, () -> {
-            productService.createProduct(testProduct);
+            productService.createProduct(dto);
         });
 
         verify(productRepository, never()).save(any(Product.class));
@@ -116,36 +128,25 @@ public class ProductServiceTest {
 
     @Test
     void createProduct_WithoutVariants_ShouldThrowException() {
-        // Given
-        Product product = Product.builder()
-            .name("Test Product")
-            .hasVariants(false)
-            .build();
-            
-        // When & Then
+        ProductCreateDTO dto = new ProductCreateDTO();
+        dto.setName("Test Product");
+        dto.setHasVariants(false);
+        
         assertThrows(ProductValidationException.class, 
-            () -> productService.createProduct(product));
+            () -> productService.createProduct(dto));
     }
     
     @Test
     void createProduct_WithVariants_ShouldSucceed() {
         // Given
-        Product product = Product.builder()
-            .name("Test Product")
-            .hasVariants(true)
-            .variants(new HashSet<>(Arrays.asList(
-                ProductVariant.builder()
-                    .sku("TEST-1")
-                    .price(BigDecimal.TEN)
-                    .stockQuantity(10)
-                    .build()
-            )))
-            .build();
-            
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+        ProductCreateDTO dto = new ProductCreateDTO();
+        dto.setName("Test Product");
+        dto.setHasVariants(true);
+        
+        when(productRepository.save(any(Product.class))).thenReturn(testProduct);
         
         // When
-        Product created = productService.createProduct(product);
+        Product created = productService.createProduct(dto);
         
         // Then
         assertNotNull(created);

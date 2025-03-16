@@ -1,11 +1,9 @@
 package com.ecommerce.controller;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +27,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 @Tag(name="Categories", description = "Api de gestions des categories")
 @Validated
 @Slf4j
@@ -68,7 +66,7 @@ public class CategoryController {
         try {
             Page<Category> categories = categoryServiceImpl.findAllCategories(PageRequest.of(page, size));
             return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES))
+            
             .body(new ApiResponse<>(true, categories, "Commandes récupérés avec succès", null, LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des catégories", e);

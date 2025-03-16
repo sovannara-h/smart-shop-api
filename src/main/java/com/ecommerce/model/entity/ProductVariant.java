@@ -4,6 +4,10 @@ import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,6 +24,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -28,11 +33,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"product", "attributeValues"})
 public class ProductVariant {
     @Id
     @GeneratedValue(strategy =  GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable =  false)
     private Product product;
@@ -52,9 +59,14 @@ public class ProductVariant {
     
     @ManyToMany
     @JoinTable(
-        name = "variant_attribute_values",
-        joinColumns = @JoinColumn(name = "variant_id"),
+        name = "product_variant_attribute_values",
+        joinColumns = @JoinColumn(name = "product_variant_id"),
         inverseJoinColumns = @JoinColumn(name = "attribute_value_id")
     )
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+    )
+    @Builder.Default
     private Set<AttributeValue> attributeValues = new HashSet<>();
 }

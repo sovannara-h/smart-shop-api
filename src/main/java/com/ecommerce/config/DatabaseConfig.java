@@ -25,12 +25,18 @@ public class DatabaseConfig {
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(username);
         config.setPassword(password);
+        
         config.setMaximumPoolSize(20);
         config.setMinimumIdle(5);
         config.setIdleTimeout(300000);
         config.setConnectionTimeout(20000);
         config.setMaxLifetime(1800000);
         config.setLeakDetectionThreshold(10000);
+        
+        // Configuration SSL pour Supabase
+        config.addDataSourceProperty("ssl", "true");
+        config.addDataSourceProperty("sslmode", "require");
+        
         return new HikariDataSource(config);
     }
 }

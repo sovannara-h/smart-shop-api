@@ -2,6 +2,7 @@ package com.ecommerce.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/products/{productId}/variants")
+@RequestMapping("/api/v1/products/{productId}/variants")
 @Tag(name = "Variantes de produits")
 @Validated
 @Slf4j
@@ -31,20 +32,35 @@ public class ProductVariantController {
 
     private final ProductVariantServiceImpl variantService;
 
-    @PostMapping("/generate")
-    public ResponseEntity<ApiResponse<List<ProductVariant>>> generateVariants(
+    @PostMapping
+    public ResponseEntity<ApiResponse<List<ProductVariant>>> createProductVariants(
         @PathVariable Long productId,
         @Valid @RequestBody ProductVariantCreateDTO dto
     ) {
         try {
-            List<ProductVariant> variants = variantService.generateAndSaveVariants(dto);
+
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<ApiResponse<List<Map<String, String>>>> generateVariants(
+        @PathVariable Long productId,
+        @Valid @RequestBody ProductVariantCreateDTO dto
+    ) {
+        try {
+            dto.setProductId(productId);
+            log.info("Données reçues - ProductID: {}, DTO: {}", productId, dto);
+            List<Map<String, String>> variants = variantService.generateVariants(dto);
             return ResponseEntity.ok(new ApiResponse<>(
                 true, variants, "Variantes générées avec succès", null, LocalDateTime.now()
             ));
         } catch (Exception e) {
-            log.error("Erreur lors de la génération des variantes", e);
+            log.error("Erreur lors de la génération des variantes: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(false, null, null, e.getMessage(), LocalDateTime.now()));
         }
     }
+
 } 

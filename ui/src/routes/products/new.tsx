@@ -1,0 +1,10 @@
+import { ProductForm } from '@/features/products/components/product-form'
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/products/new')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <ProductForm />
+}

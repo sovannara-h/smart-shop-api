@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "types": ["@uploadcare/file-uploader/types/jsx", "@uploadcare/blocks/types/jsx"],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

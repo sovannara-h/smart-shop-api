@@ -34,7 +34,7 @@ public class ProductControllerIntegrationTest {
     @Test
     @WithMockUser
     void getAllProducts_Success() throws Exception {
-        mockMvc.perform(get("/api/products")
+        mockMvc.perform(get("/api/v1/products")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -58,7 +58,7 @@ public class ProductControllerIntegrationTest {
             .active(true)
             .build();
 
-        mockMvc.perform(post("/api/products")
+        mockMvc.perform(post("/api/v1/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(product)))
                 .andExpect(status().isCreated())
@@ -69,7 +69,7 @@ public class ProductControllerIntegrationTest {
     @Test
     @WithMockUser
     void getProductById_NotFound() throws Exception {
-        mockMvc.perform(get("/api/products/999999")
+        mockMvc.perform(get("/api/v1/products/999999")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }

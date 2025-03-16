@@ -2,7 +2,10 @@ package com.ecommerce.model.entity;
 
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,6 +20,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -25,6 +29,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = "values")
 public class Attribute {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +38,9 @@ public class Attribute {
     @Column(nullable = false)
     private String name;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "attribute", cascade = CascadeType.ALL)
-    private Set<AttributeValue> values;
+    private Set<AttributeValue> values = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

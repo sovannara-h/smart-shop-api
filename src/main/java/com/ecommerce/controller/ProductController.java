@@ -1,7 +1,6 @@
 package com.ecommerce.controller;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -10,7 +9,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,6 +36,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,23 +44,32 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/products")
 @Tag(name = "Produits", description = "API de gestion des produits")
 @Validated
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductServiceImpl productService;
-
-    public ProductController(ProductServiceImpl productService) {
-        this.productService = productService;
-    }
 
     @Operation(summary = "Créer un nouveau produit")
     @Timed(value = "product.creation.time", description = "Temps de création d'un produit")
     @PostMapping
     @RateLimiter(name = "createProduct")
-    public ResponseEntity<ApiResponse<Product>> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
+    public ResponseEntity<ApiResponse<Product>> createProduct(
+        @Valid @RequestBody ProductCreateDTO dto,
+        @RequestHeader(value = "X-Session-Id", required = false) String sessionId
+    ) {
         try {
-            Product created = productService.createProduct(dto);
+            Product product;
+            
+            if (sessionId != null) {
+                // Création dans une session d'édition
+                product = productService.createProductInSession(sessionId, dto);
+            } else {
+                // Création normale (hors session)
+                product = productService.createProduct(dto);
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ApiResponse<>(true, created, "Produit créé avec succès", null, LocalDateTime.now()));
+                    .body(new ApiResponse<>(true, product, "Produit créé avec succès", null, LocalDateTime.now()));
         } catch (ProductException e) {
             log.error("Erreur lors de la création du produit", e);
             return ResponseEntity.badRequest()
@@ -81,7 +89,9 @@ public class ProductController {
         @Valid @RequestBody Product product,
         
         @Parameter(description = "Version du produit (ETag)") 
-        @RequestHeader(value = "If-Match", required = false) String ifMatch
+        @RequestHeader(value = "If-Match", required = false) String ifMatch,
+
+        @RequestHeader(value = "X-Session-Id", required = false) String sessionId
     ) {
         log.debug("Début updateProduct - id: {}, product: {}", id, product);
         
@@ -100,7 +110,15 @@ public class ProductController {
                 return ResponseEntity.badRequest().build();
             }
             
-            Product updatedProduct = productService.updateProduct(id, product);
+            Product updatedProduct;
+            
+
+            if (sessionId != null) {
+                updatedProduct = productService.updateProductInSession(sessionId, id, product);
+            } else {
+                // Mise à jour normale
+                updatedProduct = productService.updateProduct(id, product);
+            }
             
             log.info("Produit mis à jour avec succès - id: {}", id);
             
@@ -192,7 +210,6 @@ public class ProductController {
         try {
             Product product = productService.findProductById(id);
             return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES))
                 .eTag(String.valueOf(product.getVersion()))
                 .body(new ApiResponse<>(true, product, "Produits récupérés avec succès", null, LocalDateTime.now()));
                 

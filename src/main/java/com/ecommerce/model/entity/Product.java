@@ -2,12 +2,15 @@ package com.ecommerce.model.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -49,12 +52,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "products")
-public class Product {
+public class Product implements SessionAware {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Category> categories = new HashSet<>();
 
     @Column(nullable = false)
@@ -80,13 +84,15 @@ public class Product {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean active = true;
+    private Boolean active = false;
 
     @Column(name = "has_variants")
     @Builder.Default
     private Boolean hasVariants = false;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<ProductVariant> variants = new HashSet<>();
     
     @Column(columnDefinition = "jsonb")
@@ -116,6 +122,27 @@ public class Product {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public Map<String, Object> getSessionInfo() {
+        if(interactions == null) return null;
+        return (Map<String, Object>) interactions.get("session");
+    }
+
+    @Override
+    public void setSessionInfo(Map<String, Object> sessionInfo) {
+        if(interactions == null) {
+            interactions = new HashMap<>();
+        }
+        interactions.put("session", sessionInfo);
+    }
+
+    @Override
+    public void clearSessionInfo() {
+        if(interactions != null) {
+            interactions.remove("session");
+        }
     }
 
 } 
