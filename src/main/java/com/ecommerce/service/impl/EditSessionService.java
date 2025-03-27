@@ -368,9 +368,6 @@ public class EditSessionService {
             .anyMatch(audit -> audit.getExpiresAt().isAfter(now));
     }
 
-    /**
-     * Enregistre la création d'une entité dans une session
-     */
     @Transactional
     public void registerEntityCreation(String sessionId, String entityType, Long entityId) {
         if (!isSessionValid(sessionId)) {
@@ -390,6 +387,27 @@ public class EditSessionService {
         auditRepository.save(audit);
     }
 
+    @Transactional void registerEntityModification(String sessionId, String entityType, Long entityId, Object entity) {
+        if (!isSessionValid(sessionId)) {
+            throw new SessionExpiredException("La session a expiré ou n'existe pas");
+        }
+
+        LocalDateTime expiresAt = getSessionExpiryTime(sessionId);
+        Map<String, Object> entityState = objectMapper.convertValue(entity, Map.class);
+        removeComplexRelations(entityType, entityState);
+
+        EditSessionAudit audit = EditSessionAudit.builder()
+            .sessionId(sessionId)
+            .entityType(entityType)
+            .entityId(entityId)
+            .action("UPDATE")
+            .previousState(entityState)
+            .expiresAt(expiresAt)
+            .build();
+        
+        auditRepository.save(audit);
+    }
+
 
     private LocalDateTime getSessionExpiryTime(String sessionId) {
         List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
@@ -397,10 +415,15 @@ public class EditSessionService {
             throw new SessionNotFoundException("Session non trouvée: " + sessionId);
         }
         
-        // Retourner la date d'expiration la plus récente
         return audits.stream()
             .map(EditSessionAudit::getExpiresAt)
             .max(LocalDateTime::compareTo)
             .orElse(LocalDateTime.now().plusHours(24));
     }
 }
+// [
+//     ProductVariant(id=164, product=null, sku=132-c-laine, price=45354.00, stockQuantity=504, sessions=null, attributeValues=[]), 
+//     ProductVariant(id=165, product=null, sku=132-c-polyester, price=45354.00, stockQuantity=504, sessions=null, attributeValues=[]), 
+//     ProductVariant(id=166, product=null, sku=132-d-laine, price=45354.00, stockQuantity=504, sessions=null, attributeValues=[]), 
+//     ProductVariant(id=167, product=null, sku=132-d-polyester, price=45354.00, stockQuantity=504, sessions=null, attributeValues=[])
+// ]

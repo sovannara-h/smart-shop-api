@@ -15,10 +15,10 @@ export const useSelectVariants = (formSetValue: (value: any) => void) => {
       const generateCombinations = async (values: GenerateVariantsDTO) => {
 
         try {
-            const combinations = await variantsApi.generateVariants(values)
-            console.log("COBMINE", combinations)
-            formSetValue(combinations.data)
-            return combinations
+            const variants = await variantsApi.generateVariants(values)
+
+            formSetValue(variants.data)
+            return variants
         } catch (error) {
           console.log(error)            
         }

@@ -18,9 +18,10 @@ export const SelectVariants = (props: SelectVariantsProps) => {
   const { hasVariants, formSetValue,nextStep, basePrice, baseStock, productId } = props;
   const [selectedAttributes, setSelectedAttributes] = useState<number[]>([]);
 
-  const {attributes, generateCombinations, combinations} = useSelectVariants(formSetValue);
+  const {attributes, generateCombinations} = useSelectVariants(formSetValue);
 
   if (!hasVariants) return null;
+
 
   return <div className={`SelectVariants space-y-2`}>
     
@@ -30,3 +31,4 @@ export const SelectVariants = (props: SelectVariantsProps) => {
     {nextStep(() => generateCombinations({productId, basePrice , baseStock  ,  attributes : selectedAttributes}))}
   </div>;
 };
+

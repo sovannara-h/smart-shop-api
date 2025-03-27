@@ -12,7 +12,7 @@ type CombinationsStepProps = {
 export const CombinationsStep = ({ form, navigation }: CombinationsStepProps) => {
   return (
     <div className="space-y-4">
-      <ProductVariantCombinations combinations={form.getValues("combinations")} form={form} />
+      <ProductVariantCombinations variants={form.getValues("variants")} form={form} />
       {navigation}
     </div>
   );

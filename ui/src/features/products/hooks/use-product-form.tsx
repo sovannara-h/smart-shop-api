@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { editSessionApi } from "../api/edit-session.api";
 import { productsApi } from "../api/product.api";
+import { variantsApi } from "../api/variants.api";
 
 const step1Schema = z.object({
     categories: z.array(z.number()).min(1, "Sélectionnez au moins une catégorie"),
@@ -20,21 +21,33 @@ const step1Schema = z.object({
     hasVariants: z.boolean().default(false),
     variants: z.array(z.object({
       sku: z.string(),
-      attributeValues: z.record(z.string(), z.string()),
+      attributeValues: z.any().array(),
       price: z.number(),
       stockQuantity: z.number()
     })).optional()
-  })
+  }).array()
   
 
   const productImageSchema = z.object({
     image_id: z.string(),
-    filename: z.string(),
-    combination: z.string().array().optional()
+    filename: z.string().optional(),
+    variant: z.string().array().optional()
   })
+  
+  const step4Schema = productImageSchema.array();
 
   export type ProductImageData = z.infer<typeof productImageSchema>
   
+  const productVariantSchema = z.object({
+    sku: z.string(),
+    name: z.string(),
+    attributeValues: z.record(z.string(), z.string()).array(),
+    price: z.number(),
+    stockQuantity: z.number()
+  })
+
+  export type ProductVariantData = z.infer<typeof productVariantSchema>
+
   const productSchema = z.object({
     id: z.number().optional(),
     // Étape 1
@@ -48,15 +61,8 @@ const step1Schema = z.object({
     
     // Étape 3
     hasVariants: z.boolean().default(false),
-    variants: z.array(z.object({
-      sku: z.string(),
-      attributeValues: z.record(z.string(), z.string()),
-      price: z.number(),
-      stockQuantity: z.number()
-    })).optional(),
+    variants: productVariantSchema.array(),
 
-
-    combinations: z.array(z.any()),
     images: productImageSchema.array()
   })
   
@@ -79,7 +85,8 @@ export const useProductForm = () => {
         }
       })
 
-     
+
+    const productId = form.getValues('id');
       
     const validateStep = async (stepData: any) => {
         try {
@@ -88,12 +95,19 @@ export const useProductForm = () => {
               await step1Schema.parseAsync(stepData)
               break
             case 1:
-              console.log("ERRORS",form.formState.errors)
               return await handleProductCreation(stepData)
             case 2: 
-              return await step3Schema.parseAsync(stepData);
+            console.log("CASE 2", stepData, form.formState.errors, step3Schema.parseAsync(stepData))
+              await step3Schema.parseAsync(stepData.variants);
+              break
             case 3:
+              console.log("CASE 3")
               return await submitProductVariants(stepData)
+            case 4:
+              console.log("CASE 4")
+              return await submitProductImages(stepData)
+            case 5:
+              return await confirmProduct();
           }
           return true
         } catch (error) {
@@ -104,6 +118,13 @@ export const useProductForm = () => {
         }
     }
 
+    const confirmProduct = async () => {
+      try {
+        
+      } catch (error) {
+        console.error(error)
+      }
+    }
 
     const handleProductCreation = async (stepData: any) => {
       setLoadingSubmitProduct(true)
@@ -121,7 +142,6 @@ export const useProductForm = () => {
           setLoadingSubmitProduct(false)
           return true
         }
-        console.log("product response", response)
 
         setLoadingSubmitProduct(false)
         return false
@@ -135,11 +155,36 @@ export const useProductForm = () => {
 
     const submitProductVariants = async (stepData: any) => {
       try {
-        await step3Schema.parseAsync(stepData);
-
-        console.log("stepData", stepData)
+        await step3Schema.parseAsync(stepData.variants);
+        const variants = form.getValues('variants')
+        const response = await variantsApi.createProductVariants(productId, sessionId, variants);
+        return true
       } catch (error) {
+        console.error(error)
+        return false
+      }
+    }
+
+    const submitProductImages = async (stepData: any) => {
+      try {
+        await step4Schema.parseAsync(stepData.images);
+        const formImages = form.getValues('images') || [];
         
+        if (!formImages.length) {
+          return false;
+        }
+
+        const productImages = formImages.map(img => ({
+          imageId: img.image_id,
+          filename: img.filename || '',
+          variant: img.variant || []
+        }));
+
+        const response = await productsApi.upsertProductImages(productId, sessionId, productImages);
+        return true;
+      } catch (error) {
+        console.error(error);
+        return false;
       }
     }
 

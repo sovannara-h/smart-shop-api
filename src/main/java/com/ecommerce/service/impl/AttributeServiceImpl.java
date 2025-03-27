@@ -1,6 +1,9 @@
 package com.ecommerce.service.impl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,23 +34,56 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     public List<AttributeDTO> findAllWithValues() {
         return attributeRepository.findAllWithValues().stream()
-            .map(result -> AttributeDTO.builder()
-                .id(((Number) result[0]).longValue())
-                .name((String) result[1])
-                .values(result[2] != null ? List.of(((String) result[2]).split(",")) : List.of())
-                .build())
+            .<AttributeDTO>map(result -> {
+                List<Map<String, Object>> valuesList = new ArrayList<>();
+                if (result[2] != null) {
+                    for (String value : ((String) result[2]).split(",")) {
+                        Map<String, Object> valueMap = new HashMap<>();
+                        valueMap.put("value", value);
+                        valuesList.add(valueMap);
+                    }
+                }
+                
+                return AttributeDTO.builder()
+                    .id(((Number) result[0]).longValue())
+                    .name((String) result[1])
+                    .values(valuesList)
+                    .build();
+            })
             .collect(Collectors.toList());
     }
 
     @Override
     public List<AttributeDTO> findAttributesWithValuesByIds(List<Long> attributeIds) {
-        return attributeRepository.findAttributesWithValuesByIds(attributeIds).stream()
-            .map(result -> AttributeDTO.builder()
-                .id(((Number) result[0]).longValue())
-                .name((String) result[1])
-                .values(result[2] != null ? List.of(((String) result[2]).split(",")) : List.of())
-                .build())
-            .collect(Collectors.toList());
+        List<Object[]> results = attributeRepository.findAttributesWithValuesByIds(attributeIds);
+        
+        // Utiliser une Map pour regrouper les valeurs par attribut
+        Map<Long, AttributeDTO> attributesMap = new HashMap<>();
+        
+        for (Object[] result : results) {
+            Long attributeId = ((Number) result[0]).longValue();
+            String attributeName = (String) result[1];
+            String attributeValue = (String) result[2];
+            Long valueId = result.length > 3 ? ((Number) result[3]).longValue() : null;
+            
+            // Récupérer ou créer l'AttributeDTO
+            AttributeDTO dto = attributesMap.computeIfAbsent(attributeId, 
+                id -> AttributeDTO.builder()
+                    .id(id)
+                    .name(attributeName)
+                    .values(new ArrayList<>())
+                    .build());
+            
+            // Ajouter la valeur avec son ID si elle existe
+            if (attributeValue != null && valueId != null) {
+                Map<String, Object> valueMap = new HashMap<>();
+                valueMap.put("id", valueId);
+                valueMap.put("value", attributeValue);
+                dto.getValues().add(valueMap);
+            }
+        }
+        
+        return new ArrayList<>(attributesMap.values());
     }
 
     
@@ -76,7 +112,11 @@ public class AttributeServiceImpl implements AttributeService {
             .id(attribute.getId())
             .name(attribute.getName())
             .values(attributeValues.stream()
-                .map(AttributeValue::getValue)
+                .map(value -> {
+                    Map<String, Object> valueMap = new HashMap<>();
+                    valueMap.put("value", value.getValue());
+                    return valueMap;
+                })
                 .collect(Collectors.toList()))
             .build();
     }

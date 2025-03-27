@@ -139,11 +139,14 @@ public class ProductServiceImpl implements ProductService {
         return findProductsByCategory(category, pageable);
     }
 
+    public long getProductCount() {
+        return productRepository.count();
+    }
+    
     @Transactional
     public Product updateProductInSession(String sessionId, Long id, Product product) {
         Product existingProduct = findProductById(id);
     
-        // Vérifier que le produit est bien dans la session
         Map<String, Object> sessionInfo = existingProduct.getSessionInfo();
         if (sessionInfo == null || !sessionId.equals(sessionInfo.get("sessionId"))) {
             throw new IllegalStateException("Le produit n'est pas dans la session spécifiée");
@@ -151,44 +154,30 @@ public class ProductServiceImpl implements ProductService {
         
         _updateProductFields(existingProduct, product);
         
-        // Conserver les informations de session
         existingProduct.setSessionInfo(sessionInfo);
         
         return productRepository.save(existingProduct);
     }
-
-    public long getProductCount() {
-        return productRepository.count();
-    }
     
-    /**
-     * Crée un produit dans une session d'édition
-     */
     @Transactional
     public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
-        // Vérifier que la session est valide
+
         if (!editSessionService.isSessionValid(sessionId)) {
             throw new SessionExpiredException("La session a expiré ou n'existe pas");
         }
         
-        // Créer le produit
         Product product = new Product();
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
-        product.setActive(false); // Par défaut inactif jusqu'à confirmation
+        product.setActive(false); 
         
-        // Autres propriétés selon votre modèle
-        
-        // Marquer comme étant dans une session
         Map<String, Object> sessionInfo = new HashMap<>();
         sessionInfo.put("sessionId", sessionId);
         sessionInfo.put("status", "TEMPORARY");
         ((SessionAware) product).setSessionInfo(sessionInfo);
         
-        // Sauvegarder le produit
         Product savedProduct = productRepository.save(product);
         
-        // Enregistrer dans l'audit de session
         editSessionService.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
         
         return savedProduct;

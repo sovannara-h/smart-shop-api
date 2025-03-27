@@ -1,6 +1,7 @@
 package com.ecommerce.model.dto;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,5 +15,5 @@ import lombok.NoArgsConstructor;
 public class AttributeDTO {
     private Long id;
     private String name;
-    private List<String> values;
+    private List<Map<String, Object>> values;
 } 

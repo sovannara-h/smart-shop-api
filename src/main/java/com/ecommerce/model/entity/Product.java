@@ -10,7 +10,9 @@ import java.util.Set;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -90,6 +92,11 @@ public class Product implements SessionAware {
     @Builder.Default
     private Boolean hasVariants = false;
 
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id",
+        scope = Product.class
+    )
     @JsonManagedReference
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     @Builder.Default
@@ -102,10 +109,11 @@ public class Product implements SessionAware {
     @Version
     private Long version;
 
-    // @Column(name = "stock_quantity")
-    // @NotNull(message = "La quantité en stock est obligatoire")
-    // @Min(value = 0)
-    // private Integer stockInQuantity;
+
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> sessions;
+
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -126,22 +134,22 @@ public class Product implements SessionAware {
 
     @Override
     public Map<String, Object> getSessionInfo() {
-        if(interactions == null) return null;
-        return (Map<String, Object>) interactions.get("session");
+        if(sessions == null) return null;
+        return (Map<String, Object>) sessions.get("session");
     }
 
     @Override
     public void setSessionInfo(Map<String, Object> sessionInfo) {
-        if(interactions == null) {
-            interactions = new HashMap<>();
+        if(sessions == null) {
+            sessions = new HashMap<>();
         }
-        interactions.put("session", sessionInfo);
+        sessions.put("session", sessionInfo);
     }
 
     @Override
     public void clearSessionInfo() {
-        if(interactions != null) {
-            interactions.remove("session");
+        if(sessions != null) {
+            sessions.remove("session");
         }
     }
 

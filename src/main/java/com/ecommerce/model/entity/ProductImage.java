@@ -1,18 +1,14 @@
 package com.ecommerce.model.entity;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,26 +17,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product_variants")
+@Table(name = "product_images")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EqualsAndHashCode(exclude = {"product", "variantAttributeValues"})
-public class ProductVariant implements SessionAware {
+public class ProductImage implements SessionAware {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy =  GenerationType.IDENTITY)
     private Long id;
 
     @JsonBackReference
@@ -48,27 +42,37 @@ public class ProductVariant implements SessionAware {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(unique = true, nullable = false)
-    private String sku;
-    
-    @Column(precision = 10, scale = 2, nullable = false)
-    @NotNull(message = "Le prix est obligatoire")
-    @Min(value = 0)
-    private BigDecimal price;
-    
-    @Column(name = "stock_quantity")
-    @NotNull(message = "La quantité en stock est obligatoire")
-    @Min(value = 0)
-    private Integer stockQuantity;
-    
+    @Column(nullable = false)
+    @NotBlank(message = "image id is required.")
+    @Size(min = 2)
+    private String imageId;
+
+    // @Column(nullable = false)
+    // @NotBlank(message = "image id is required.")
+    // @Size(min = 2)
+    private String filename;
+
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> sessions;
+
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+     @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
     
-    @OneToMany(mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties("productVariant")
-    @Builder.Default
-    private Set<ProductVariantAttributeValue> variantAttributeValues = new HashSet<>();
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @Override
     public Map<String, Object> getSessionInfo() {
@@ -90,4 +94,5 @@ public class ProductVariant implements SessionAware {
             sessions.remove("session");
         }
     }
+    
 }

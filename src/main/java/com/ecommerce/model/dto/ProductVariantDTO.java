@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class ProductVariantDTO {
     private String sku;
-    private Map<String, String> attributeValues; // ex: {"Couleur": "Rouge"}
+    private Map<String, String> attributeValues;
     private BigDecimal price;
     private Integer stockQuantity;
 } 

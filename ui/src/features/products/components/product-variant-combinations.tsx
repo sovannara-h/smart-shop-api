@@ -1,58 +1,65 @@
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UseFormReturn } from "react-hook-form";
-import { ProductFormData } from "../hooks/use-product-form";
+import { ProductFormData, ProductVariantData } from "../hooks/use-product-form";
 
-
-export type  ProductVariantCombinationsProps = {
-    combinations: {[key: string]: string}[]
+export type ProductVariantCombinationsProps = {
+    variants: ProductVariantData[] | undefined
     form: UseFormReturn<ProductFormData>
 }
 
 export const ProductVariantCombinations = (props: ProductVariantCombinationsProps) => {
+    const { variants, form } = props;
 
-    const {combinations, form} = props;
-    console.log(combinations)
+    if (!variants || !variants.length) return null;
 
-    if(!combinations || !combinations?.length) return null;
+    const attributeNames = variants[0]?.attributeValues.map(av => av.name) || [];
+
     return (
-      <div className={`ProductVariantCombinations`}>
-        <Table>
-              <TableHeader>
-                <TableRow>
-                  {Object.keys(combinations.at(0) || {}).map((key) => (
-                    <TableHead key={key}>{key}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {combinations.map((combination, index) => {
-                  return (
-                    <TableRow key={index}>
-                      {Object.entries(combination).map(([key, value]) => {
-                        if (key !== "price" && key !== "stockQuantity")
-                          return <TableCell>{value}</TableCell>;
-                        return (
-                          <TableCell>
-                            <Input
-                            className="max-w-[6rem]"
-                              value={value}
-                              onChange={(e) => {
-                                form.setValue(
-                                  `variants.${index}.${key}`,
-                                  e.target.value,
-                                );
-                              }}
-                            />
-                          </TableCell>
-                        );
-                      })}
+        <div className="ProductVariantCombinations">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>SKU</TableHead>
+                        {attributeNames.map(name => (
+                            <TableHead key={name}>{name}</TableHead>
+                        ))}
+                        <TableHead>Prix</TableHead>
+                        <TableHead>Stock</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
+                </TableHeader>
+
+                <TableBody>
+                    {variants.map((variant, index) => (
+                        <TableRow key={variant.sku}>
+                            <TableCell>{variant.sku}</TableCell>
+                            {variant.attributeValues.map(av => (
+                                <TableCell key={av.id}>{av.value}</TableCell>
+                            ))}
+                            <TableCell>
+                                <Input
+                                    className="max-w-[6rem]"
+                                    type="number"
+                                    value={variant.price}
+                                    onChange={(e) => {
+                                        form.setValue(`variants.${index}.price`, Number(e.target.value));
+                                    }}
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    className="max-w-[6rem]"
+                                    type="number"
+                                    value={variant.stockQuantity}
+                                    onChange={(e) => {
+                                        form.setValue(`variants.${index}.stockQuantity`, Number(e.target.value));
+                                    }}
+                                />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
             </Table>
-      </div>
+        </div>
     );
 }

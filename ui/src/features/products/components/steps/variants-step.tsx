@@ -21,7 +21,7 @@ export const VariantsStep = ({ form, onNext, onPrevious }: VariantsStepProps) =>
       <SelectVariants
         hasVariants={form.watch("hasVariants")}
         formSetValue={(value) => form.setValue(
-          "combinations",
+          "variants",
           value
         )}
         nextStep={(generateCombinations) => (
@@ -32,9 +32,8 @@ export const VariantsStep = ({ form, onNext, onPrevious }: VariantsStepProps) =>
             <Button
               type="button"
               onClick={async () => {
-                const combinations = await generateCombinations();
-                console.log("combination", form.watch('combinations'));
-                if (form.getValues("hasVariants") && form.watch("combinations") && form.watch("combinations").length > 0) {
+                const variants = await generateCombinations();
+                if (form.getValues("hasVariants") && form.watch("variants") && form.watch("variants").length > 0) {
                   onNext();
                 } else {
                   onNext();
