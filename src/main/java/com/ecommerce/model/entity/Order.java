@@ -1,12 +1,6 @@
 package com.ecommerce.model.entity;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +23,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,77 +40,76 @@ import lombok.NoArgsConstructor;
 @Table(name = "orders")
 public class Order {
 
-    public enum Status {
-        PENDING,
-        CONFIRMED,
-        SHIPPED,
-        DELIVERED,
-        CANCELLED
-    }
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  public enum Status {
+    PENDING,
+    CONFIRMED,
+    SHIPPED,
+    DELIVERED,
+    CANCELLED
+  }
 
-    @Column(name = "order_date")
-    @NotNull(message = "La date de commande est obligatoire")
-    @PastOrPresent(message = "La date de commande ne peut pas être dans le futur")
-    private LocalDateTime orderDate;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Le statut est obligatoire")
-    private Status status;
+  @Column(name = "order_date")
+  @NotNull(message = "Order date is required")
+  @PastOrPresent(message = "Order date cannot be in the future")
+  private LocalDateTime orderDate;
 
-    @Column(name = "total_amount")
-    @NotNull(message = "Le montant total est obligatoire")
-    @Min(value = 0, message = "Le montant total doit être supérieur ou égal à 0")
-    private BigDecimal totalAmount;
+  @Enumerated(EnumType.STRING)
+  @NotNull(message = "Status is required")
+  private Status status;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Size(min = 1, message = "La commande doit contenir au moins un article")
-    @Builder.Default
-    @JsonManagedReference
-    private List<OrderItem> items = new ArrayList<>();
+  @Column(name = "total_amount")
+  @NotNull(message = "Total amount is required")
+  @Min(value = 0, message = "Total amount must be greater than or equal to 0")
+  private BigDecimal totalAmount;
 
-    @Version
-    private Long version;
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Size(min = 1, message = "Order must contain at least one item")
+  @Builder.Default
+  @JsonManagedReference
+  private List<OrderItem> items = new ArrayList<>();
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+  @Version private Long version;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
 
-    @Column(nullable = false)
-    @Email(message = "L'email doit être valide")
-    @NotBlank(message = "L'email est obligatoire")
-    private String customerEmail;
+  @Column(name = "updated_at", nullable = false)
+  private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;  // Peut être null si commande sans compte
+  @Column(nullable = false)
+  @Email(message = "Email must be valid")
+  @NotBlank(message = "Email is required")
+  private String customerEmail;
 
-    // Informations de livraison obligatoires
-    @Column(nullable = false)
-    @NotBlank(message = "Le nom est obligatoire")
-    private String shippingName;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user; // Peut être null si commande sans compte
 
-    @Column(nullable = false)
-    @NotBlank(message = "L'adresse est obligatoire")
-    private String shippingAddress;
+  // Informations de livraison obligatoires
+  @Column(nullable = false)
+  @NotBlank(message = "Name is required")
+  private String shippingName;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Le téléphone est obligatoire")
-    private String shippingPhone;
+  @Column(nullable = false)
+  @NotBlank(message = "Address is required")
+  private String shippingAddress;
 
-     @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+  @Column(nullable = false)
+  @NotBlank(message = "Phone is required")
+  private String shippingPhone;
+
+  @PrePersist
+  protected void onCreate() {
+    createdAt = LocalDateTime.now();
+    updatedAt = LocalDateTime.now();
+  }
+
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = LocalDateTime.now();
+  }
 }

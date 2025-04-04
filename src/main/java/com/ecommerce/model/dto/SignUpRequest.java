@@ -7,12 +7,13 @@ import lombok.Data;
 
 @Data
 public class SignUpRequest {
-    @NotBlank
-    @Size(max = 50)
-    @Email
-    private String email;
+  @NotBlank(message = "L'email est obligatoire")
+  @Email(message = "Format d'email invalide")
+  @Size(max = 50)
+  private String email;
 
-    @NotBlank
-    @Size(max = 100)
-    private String password;
+  @NotBlank(message = "Le mot de passe est obligatoire")
+  @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
+  @Size(max = 100)
+  private String password;
 }

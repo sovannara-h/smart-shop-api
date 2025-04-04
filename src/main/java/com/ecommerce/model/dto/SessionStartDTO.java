@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SessionStartDTO {
-    private String entityType;
-    private Long entityId;
+  private String entityType;
+  private Long entityId;
 }

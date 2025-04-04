@@ -9,13 +9,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.ecommerce.exception.ProductException;
+import com.ecommerce.exception.ProductValidationException;
+import com.ecommerce.model.dto.ProductCreateDTO;
+import com.ecommerce.model.entity.Product;
+import com.ecommerce.model.entity.ProductVariant;
+import com.ecommerce.repository.ProductRepository;
+import com.ecommerce.service.impl.ProductServiceImpl;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,131 +32,126 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import com.ecommerce.exception.ProductException;
-import com.ecommerce.exception.ProductValidationException;
-import com.ecommerce.model.dto.ProductCreateDTO;
-import com.ecommerce.model.entity.Product;
-import com.ecommerce.model.entity.ProductVariant;
-import com.ecommerce.repository.ProductRepository;
-import com.ecommerce.service.impl.ProductServiceImpl;
-
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
 
-    @Mock
-    private ProductRepository productRepository;
+  @Mock private ProductRepository productRepository;
 
-    @InjectMocks
-    private ProductServiceImpl productService;
+  @InjectMocks private ProductServiceImpl productService;
 
-    private Product testProduct;
+  private Product testProduct;
 
-    @BeforeEach
-    void setUp() {
-        testProduct = Product.builder()
+  @BeforeEach
+  void setUp() {
+    testProduct =
+        Product.builder()
             .id(1L)
             .name("Test Product")
             .description("Test Description")
             .hasVariants(true)
-            .variants(new HashSet<>(Arrays.asList(
-                ProductVariant.builder()
-                    .sku("TEST-1")
-                    .price(new BigDecimal("99.99"))
-                    .stockQuantity(10)
-                    .build()
-            )))
+            .variants(
+                new HashSet<>(
+                    Arrays.asList(
+                        ProductVariant.builder()
+                            .sku("TEST-1")
+                            .price(new BigDecimal("99.99"))
+                            .stockQuantity(10)
+                            .build())))
             .active(true)
             .build();
-    }
+  }
 
-    @Test
-    void createProduct_Success() {
-        ProductCreateDTO dto = new ProductCreateDTO();
-        dto.setName("Test Product");
-        dto.setDescription("Test Description");
-        dto.setHasVariants(true);
-        dto.setActive(true);
-        dto.setCategories(new ArrayList<>());
+  @Test
+  void createProduct_Success() {
+    ProductCreateDTO dto = new ProductCreateDTO();
+    dto.setName("Test Product");
+    dto.setDescription("Test Description");
+    dto.setHasVariants(true);
+    dto.setActive(true);
+    dto.setCategories(new ArrayList<>());
 
-        when(productRepository.save(any(Product.class))).thenReturn(testProduct);
+    when(productRepository.save(any(Product.class))).thenReturn(testProduct);
 
-        Product created = productService.createProduct(dto);
+    Product created = productService.createProduct(dto);
 
-        assertNotNull(created);
-        assertEquals("Test Product", created.getName());
-        verify(productRepository).save(any(Product.class));
-    }
+    assertNotNull(created);
+    assertEquals("Test Product", created.getName());
+    verify(productRepository).save(any(Product.class));
+  }
 
-    @Test
-    void createProduct_WithNegativePrice_ThrowsException() {
-        ProductCreateDTO dto = new ProductCreateDTO();
-        dto.setName("Test Product");
-        dto.setHasVariants(false);
+  @Test
+  void createProduct_WithNegativePrice_ThrowsException() {
+    ProductCreateDTO dto = new ProductCreateDTO();
+    dto.setName("Test Product");
+    dto.setHasVariants(false);
 
-        assertThrows(ProductException.class, () -> {
-            productService.createProduct(dto);
+    assertThrows(
+        ProductException.class,
+        () -> {
+          productService.createProduct(dto);
         });
 
-        verify(productRepository, never()).save(any(Product.class));
-    }
+    verify(productRepository, never()).save(any(Product.class));
+  }
 
-    @Test
-    void findProductById_Success() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+  @Test
+  void findProductById_Success() {
+    when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
-        Product found = productService.findProductById(1L);
+    Product found = productService.findProductById(1L);
 
-        assertNotNull(found);
-        assertEquals(1L, found.getId());
-        verify(productRepository).findById(1L);
-    }
+    assertNotNull(found);
+    assertEquals(1L, found.getId());
+    verify(productRepository).findById(1L);
+  }
 
-    @Test
-    void findProductById_NotFound_ThrowsException() {
-        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+  @Test
+  void findProductById_NotFound_ThrowsException() {
+    when(productRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(ProductException.class, () -> {
-            productService.findProductById(999L);
+    assertThrows(
+        ProductException.class,
+        () -> {
+          productService.findProductById(999L);
         });
-    }
+  }
 
-    @Test
-    void findAllProducts_Success() {
-        Page<Product> page = new PageImpl<>(List.of(testProduct));
-        when(productRepository.findAll(any(PageRequest.class))).thenReturn(page);
+  @Test
+  void findAllProducts_Success() {
+    Page<Product> page = new PageImpl<>(List.of(testProduct));
+    when(productRepository.findAll(any(PageRequest.class))).thenReturn(page);
 
-        Page<Product> result = productService.findAllProducts(PageRequest.of(0, 10));
+    Page<Product> result = productService.findAllProducts(PageRequest.of(0, 10));
 
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        verify(productRepository).findAll(any(PageRequest.class));
-    }
+    assertNotNull(result);
+    assertEquals(1, result.getTotalElements());
+    verify(productRepository).findAll(any(PageRequest.class));
+  }
 
-    @Test
-    void createProduct_WithoutVariants_ShouldThrowException() {
-        ProductCreateDTO dto = new ProductCreateDTO();
-        dto.setName("Test Product");
-        dto.setHasVariants(false);
-        
-        assertThrows(ProductValidationException.class, 
-            () -> productService.createProduct(dto));
-    }
-    
-    @Test
-    void createProduct_WithVariants_ShouldSucceed() {
-        // Given
-        ProductCreateDTO dto = new ProductCreateDTO();
-        dto.setName("Test Product");
-        dto.setHasVariants(true);
-        
-        when(productRepository.save(any(Product.class))).thenReturn(testProduct);
-        
-        // When
-        Product created = productService.createProduct(dto);
-        
-        // Then
-        assertNotNull(created);
-        assertTrue(created.getHasVariants());
-        assertEquals(1, created.getVariants().size());
-    }
+  @Test
+  void createProduct_WithoutVariants_ShouldThrowException() {
+    ProductCreateDTO dto = new ProductCreateDTO();
+    dto.setName("Test Product");
+    dto.setHasVariants(false);
+
+    assertThrows(ProductValidationException.class, () -> productService.createProduct(dto));
+  }
+
+  @Test
+  void createProduct_WithVariants_ShouldSucceed() {
+    // Given
+    ProductCreateDTO dto = new ProductCreateDTO();
+    dto.setName("Test Product");
+    dto.setHasVariants(true);
+
+    when(productRepository.save(any(Product.class))).thenReturn(testProduct);
+
+    // When
+    Product created = productService.createProduct(dto);
+
+    // Then
+    assertNotNull(created);
+    assertTrue(created.getHasVariants());
+    assertEquals(1, created.getVariants().size());
+  }
 }

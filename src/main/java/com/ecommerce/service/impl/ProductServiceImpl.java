@@ -1,9 +1,7 @@
 package com.ecommerce.service.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,7 +20,6 @@ import com.ecommerce.exception.SessionExpiredException;
 import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Category;
 import com.ecommerce.model.entity.Product;
-import com.ecommerce.model.entity.SessionAware;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.interfaces.ProductService;
@@ -36,150 +33,150 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final EditSessionService editSessionService;
+  private final ProductRepository productRepository;
+  private final CategoryRepository categoryRepository;
+  private final EditSessionServiceImpl editSessionServiceImpl;
 
-    private void _validateProduct(Product product) {
-        List<String> errors = new ArrayList<>();
-        
-        if (Boolean.TRUE.equals(product.getHasVariants()) && product.getVariants().isEmpty()) {
-            errors.add("Le produit doit avoir au moins une variante");
-        }
-        
-        if (!errors.isEmpty()) {
-            throw new ProductValidationException(String.join(", ", errors));
-        }
+  private void _validateProduct(Product product) {
+    List<String> errors = new ArrayList<>();
+
+    if (Boolean.TRUE.equals(product.getHasVariants()) && product.getVariants().isEmpty()) {
+      errors.add("Product must have at least one variant");
     }
 
-    private void _updateProductFields(Product existing, Product updated) {
-        existing.setName(updated.getName());
-        existing.setDescription(updated.getDescription());
-        existing.setCategories(updated.getCategories());
-        existing.setActive(updated.getActive());
-        existing.setHasVariants(updated.getHasVariants());
+    if (!errors.isEmpty()) {
+      throw new ProductValidationException(String.join(", ", errors));
+    }
+  }
+
+  private void _updateProductFields(Product existing, Product updated) {
+    existing.setName(updated.getName());
+    existing.setDescription(updated.getDescription());
+    existing.setCategories(updated.getCategories());
+    existing.setActive(updated.getActive());
+    existing.setHasVariants(updated.getHasVariants());
+  }
+
+  @Override
+  @Transactional
+  public Product createProduct(ProductCreateDTO dto) {
+    log.debug("Creating new product: {}", dto.getName());
+
+    try {
+      Product product = new Product();
+      product.setName(dto.getName());
+      product.setDescription(dto.getDescription());
+      product.setActive(dto.getActive() != null ? dto.getActive() : true);
+      product.setHasVariants(dto.getHasVariants());
+
+      Set<Category> categories =
+          dto.getCategories().stream()
+              .<Category>map(
+                  id ->
+                      categoryRepository
+                          .findById(id)
+                          .orElseThrow(
+                              () -> new CategoryNotFoundException("Category not found: " + id)))
+              .collect(Collectors.toSet());
+      product.setCategories(categories);
+
+      _validateProduct(product);
+      return productRepository.save(product);
+    } catch (DataIntegrityViolationException e) {
+      log.error("Data integrity error while creating product", e);
+      throw new ProductException("A product with these details already exists");
+    } catch (Exception e) {
+      log.error("Unexpected error while creating product", e);
+      throw new ProductException("Error creating product: " + e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public Product updateProduct(Long id, Product product) {
+    log.debug("Updating product with ID: {}", id);
+    _validateProduct(product);
+
+    try {
+      Product existingProduct = findProductById(id);
+
+      if (!existingProduct.getVersion().equals(product.getVersion())) {
+        throw new ProductConcurrencyException("Product has been modified by another user");
+      }
+
+      _updateProductFields(existingProduct, product);
+      return productRepository.save(existingProduct);
+    } catch (ProductNotFoundException | ProductConcurrencyException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error("Error updating product {}", id, e);
+      throw new ProductException("Error updating: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public void deleteProduct(Long id) {
+    try {
+      productRepository.deleteById(id);
+    } catch (Exception e) {
+      throw new ProductException(e.getMessage());
+    }
+  }
+
+  @Override
+  public Product findProductById(Long id) {
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
+    }
+    return productRepository.findById(id).orElseThrow(() -> new ProductException("id"));
+  }
+
+  @Override
+  public Page<Product> findAllProducts(Pageable pageable) {
+    return productRepository.findAll(pageable);
+  }
+
+  @Override
+  public Page<Product> findProductsByCategory(Category category, Pageable pageable) {
+    return productRepository.findProductsByCategory(category, pageable);
+  }
+
+  public long getProductCount() {
+    return productRepository.count();
+  }
+
+  @Transactional
+  public Product updateProductInSession(String sessionId, Long id, Product product) {
+    Product existingProduct = findProductById(id);
+
+    if (!sessionId.equals(existingProduct.getSessionId())) {
+      throw new IllegalStateException("Product is not in the specified session");
     }
 
-    @Override
-    @Transactional
-    public Product createProduct(ProductCreateDTO dto) {
-        log.debug("Création d'un nouveau produit : {}", dto.getName());
-        
-        try {
-            Product product = new Product();
-            product.setName(dto.getName());
-            product.setDescription(dto.getDescription());
-            product.setActive(dto.getActive() != null ? dto.getActive() : true);
-            product.setHasVariants(dto.getHasVariants());
-    
-            Set<Category> categories = dto.getCategories().stream()
-                .<Category>map(id -> categoryRepository.findById(id)
-                    .orElseThrow(() -> new CategoryNotFoundException("Catégorie non trouvée: " + id)))
-                .collect(Collectors.toSet());
-            product.setCategories(categories);
-            
-            _validateProduct(product);
-            return productRepository.save(product);
-        } catch (DataIntegrityViolationException e) {
-            log.error("Erreur d'intégrité des données lors de la création du produit", e);
-            throw new ProductException("Un produit avec ces informations existe déjà");
-        } catch (Exception e) {
-            log.error("Erreur inattendue lors de la création du produit", e);
-            throw new ProductException("Erreur lors de la création du produit: " + e.getMessage());
-        }
+    _updateProductFields(existingProduct, product);
+
+    existingProduct.setSessionId(sessionId);
+
+    return productRepository.save(existingProduct);
+  }
+
+  @Transactional
+  public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
+    if (!editSessionServiceImpl.isSessionValid(sessionId)) {
+      throw new SessionExpiredException("Session has expired or does not exist");
     }
 
-    @Override
-    @Transactional
-    public Product updateProduct(Long id, Product product) {
-        log.debug("Mise à jour du produit avec l'ID : {}", id);
-        _validateProduct(product);
+    Product product = new Product();
+    product.setName(dto.getName());
+    product.setDescription(dto.getDescription());
+    product.setActive(false);
 
-        try {
-            Product existingProduct = findProductById(id);
+    product.setSessionId(sessionId);
 
-            if (!existingProduct.getVersion().equals(product.getVersion())) {
-                throw new ProductConcurrencyException("Le produit a été modifié par un autre utilisateur");
-            }
+    Product savedProduct = productRepository.save(product);
 
-            _updateProductFields(existingProduct, product);
-            return productRepository.save(existingProduct);
-        } catch (ProductNotFoundException | ProductConcurrencyException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Erreur lors de la mise à jour du produit {}", id, e);
-            throw new ProductException("Erreur lors de la mise à jour: " + e.getMessage());
-        }
-    }
+    editSessionServiceImpl.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
 
-    @Override
-    public void deleteProduct(Long id) {
-        try {
-            productRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new ProductException(e.getMessage());
-        }
-    }
-
-    @Override
-    public Product findProductById(Long id) {
-        if(id <= 0) {
-            throw new IllegalArgumentException("L'ID doit être positif");
-        }
-        return productRepository.findById(id).orElseThrow(() -> new ProductException("id"));
-    }
-
-    @Override
-    public Page<Product> findAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
-    }
-
-    @Override
-    public Page<Product> findProductsByCategory(Category category, Pageable pageable) {
-        return findProductsByCategory(category, pageable);
-    }
-
-    public long getProductCount() {
-        return productRepository.count();
-    }
-    
-    @Transactional
-    public Product updateProductInSession(String sessionId, Long id, Product product) {
-        Product existingProduct = findProductById(id);
-    
-        Map<String, Object> sessionInfo = existingProduct.getSessionInfo();
-        if (sessionInfo == null || !sessionId.equals(sessionInfo.get("sessionId"))) {
-            throw new IllegalStateException("Le produit n'est pas dans la session spécifiée");
-        }
-        
-        _updateProductFields(existingProduct, product);
-        
-        existingProduct.setSessionInfo(sessionInfo);
-        
-        return productRepository.save(existingProduct);
-    }
-    
-    @Transactional
-    public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
-
-        if (!editSessionService.isSessionValid(sessionId)) {
-            throw new SessionExpiredException("La session a expiré ou n'existe pas");
-        }
-        
-        Product product = new Product();
-        product.setName(dto.getName());
-        product.setDescription(dto.getDescription());
-        product.setActive(false); 
-        
-        Map<String, Object> sessionInfo = new HashMap<>();
-        sessionInfo.put("sessionId", sessionId);
-        sessionInfo.put("status", "TEMPORARY");
-        ((SessionAware) product).setSessionInfo(sessionInfo);
-        
-        Product savedProduct = productRepository.save(product);
-        
-        editSessionService.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
-        
-        return savedProduct;
-    }
+    return savedProduct;
+  }
 }

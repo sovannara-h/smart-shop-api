@@ -130,7 +130,13 @@ export const ProductForm = () => {
           }
         />
       case PRODUCT_FORM_STEPS.RESUME:
-        return <ResumeStep />
+        return <ResumeStep navigation={
+          <StepNavigation
+                currentStep={currentStep}
+                onPrevious={() => setCurrentStep((s) => s - 1)}
+                onNext={handleNextStep}
+              />
+        }/>
       default:
         return null;
     }

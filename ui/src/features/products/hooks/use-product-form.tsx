@@ -120,9 +120,11 @@ export const useProductForm = () => {
 
     const confirmProduct = async () => {
       try {
-        
+        await productsApi.confirmProduct(sessionId);       
+        return true
       } catch (error) {
         console.error(error)
+        return false
       }
     }
 

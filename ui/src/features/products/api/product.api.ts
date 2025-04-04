@@ -65,7 +65,7 @@ export const productsApi = {
     if (!response.ok) throw new Error('Erreur lors de l\;upsert des images du produit');
     return response.json()
   },
-  confirmProduct: async (sessionId: string) => {
+  confirmProduct: async (sessionId: string | null) => {
     if(!sessionId) return;
     const response = await fetch(`http://localhost:8080/api/v1/sessions/${sessionId}/confirm`, {
       method: 'POST',
@@ -73,6 +73,7 @@ export const productsApi = {
         'Content-Type': 'application/json',
       },
     })
+    console.log(response)
     if (!response.ok) throw new Error('Erreur lors de la confirmation du produit');
     return response.json()
   },

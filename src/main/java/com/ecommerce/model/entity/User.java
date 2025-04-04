@@ -18,21 +18,16 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "users")
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    // @NotBlank
-    // @Size(max = 50)
-    // private String username;
+  @NotBlank
+  @Size(max = 100)
+  private String password;
 
-    @NotBlank
-    @Size(max = 100)
-    private String password;
-
-    @NotBlank
-    @Size(max = 50)
-    @Email
-    private String email;
-
+  @NotBlank
+  @Size(max = 50)
+  @Email
+  private String email;
 }

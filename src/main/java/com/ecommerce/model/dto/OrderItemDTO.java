@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderItemDTO {
-    @NotNull
-    private Long productId;
-    
-    @NotNull
-    @Min(1)
-    private Integer quantity;
+  @NotNull private Long productId;
+
+  @NotNull
+  @Min(1)
+  private Integer quantity;
 }

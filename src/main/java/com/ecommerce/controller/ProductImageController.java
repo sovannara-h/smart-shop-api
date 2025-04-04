@@ -17,7 +17,7 @@ import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.dto.ProductImagesUpsertDTO;
 import com.ecommerce.model.entity.ProductImage;
 import com.ecommerce.repository.ProductRepository;
-import com.ecommerce.service.impl.ProductImageService;
+import com.ecommerce.service.impl.ProductImageServiceImpl;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,49 +31,57 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class ProductImageController {
-    
-    private final ProductImageService productImageService;
-    private final ProductRepository productRepository;
-    
-    @PostMapping
-    public ResponseEntity<ApiResponse<List<ProductImage>>> upsertProductImages(
-        @PathVariable Long productId,
-        @Valid @RequestBody ProductImagesUpsertDTO dto,
-        @RequestHeader(value= "X-Session-Id", required = false) String sessionId
-    ) {
-        try {
-            log.info("DTOOO: {}", dto);
-            if (dto.getProductImages().stream().anyMatch(img -> img.getImageId() == null)) {
-                return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, null, null, "ImageId est requis pour toutes les images", LocalDateTime.now()));
-            }
-            if (!productRepository.existsById(productId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, null, null, "Produit non trouvé: " + productId, LocalDateTime.now()));
-            }
 
-            
+  private final ProductImageServiceImpl productImageServiceImpl;
+  private final ProductRepository productRepository;
 
-            // if (dto == null || dto.getProductImages() == null) {
-            //     return ResponseEntity.badRequest()
-            //         .body(new ApiResponse<>(false, null, null, "Les données d'images sont requises", LocalDateTime.now()));
-            // }
-    
-            List<ProductImage> productImages;
+  @PostMapping
+  public ResponseEntity<ApiResponse<List<ProductImage>>> upsertProductImages(
+      @PathVariable Long productId,
+      @Valid @RequestBody ProductImagesUpsertDTO dto,
+      @RequestHeader(value = "X-Session-Id", required = false) String sessionId) {
+    try {
+      log.info("DTOOO: {}", dto);
+      if (dto.getProductImages().stream().anyMatch(img -> img.getImageId() == null)) {
+        return ResponseEntity.badRequest()
+            .body(
+                new ApiResponse<>(
+                    false, null, null, "ImageId is required for all images ", LocalDateTime.now()));
+      }
+      if (!productRepository.existsById(productId)) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(
+                new ApiResponse<>(
+                    false, null, null, "Product not found: " + productId, LocalDateTime.now()));
+      }
 
-            if(sessionId != null) {
-                productImages = productImageService.upsertProductImagesInSession(sessionId, dto.getProductImages(), productId);
-            } else {
-                productImages = productImageService.upsertProductImages(dto.getProductImages(), productId);
-            }
+      // if (dto == null || dto.getProductImages() == null) {
+      //     return ResponseEntity.badRequest()
+      //         .body(new ApiResponse<>(false, null, null, "Image data is required",
+      // LocalDateTime.now()));
+      // }
 
-            return ResponseEntity.ok(new ApiResponse<>(
-                true, productImages, "Upsert product images successfully", null, LocalDateTime.now()
-            ));
-        } catch (Exception e) {
-            log.error("Erreur lors de l'upsert des images du produit : {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, null, null, e.getMessage(), LocalDateTime.now()));
-        }
+      List<ProductImage> productImages;
+
+      if (sessionId != null) {
+        productImages =
+            productImageServiceImpl.upsertProductImagesInSession(
+                sessionId, dto.getProductImages(), productId);
+      } else {
+        productImages = productImageServiceImpl.upsertProductImages(dto.getProductImages(), productId);
+      }
+
+      return ResponseEntity.ok(
+          new ApiResponse<>(
+              true,
+              productImages,
+              "Upsert product images successfully",
+              null,
+              LocalDateTime.now()));
+    } catch (Exception e) {
+      log.error("Error during product image creation/update: {}", e.getMessage(), e);
+      return ResponseEntity.badRequest()
+          .body(new ApiResponse<>(false, null, null, e.getMessage(), LocalDateTime.now()));
     }
+  }
 }

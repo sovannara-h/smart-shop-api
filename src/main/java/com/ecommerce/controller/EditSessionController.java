@@ -14,7 +14,7 @@ import com.ecommerce.exception.SessionExpiredException;
 import com.ecommerce.exception.SessionNotFoundException;
 import com.ecommerce.model.dto.SessionResponseDTO;
 import com.ecommerce.model.dto.SessionStartDTO;
-import com.ecommerce.service.impl.EditSessionService;
+import com.ecommerce.service.impl.EditSessionServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,97 +23,81 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EditSessionController {
 
-    private final EditSessionService editSessionService;
+  private final EditSessionServiceImpl editSessionServiceImpl;
 
-    /**
-     * Démarre une session d'édition
-     */
-    @PostMapping("/start")
-    public ResponseEntity<?> startSession(@RequestBody SessionStartDTO request) {
-        try {
-            String sessionId = editSessionService.startSession(
-                request.getEntityType(),
-                request.getEntityId()
-            );
-            
-            SessionResponseDTO response = new SessionResponseDTO(
-                sessionId,
-                request.getEntityType(),
-                request.getEntityId(),
-                null  // expiresAt sera rempli par le service
-            );
-            
-            return ResponseEntity.ok(response);
-        } catch (EntityLockedException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(e.getMessage());
-        }
-    }
-    
-    /**
-     * Confirme les modifications d'une session
-     */
-    @PostMapping("/{sessionId}/confirm")
-    public ResponseEntity<?> confirmSession(@PathVariable String sessionId) {
-        try {
-            editSessionService.confirmSession(sessionId);
-            return ResponseEntity.ok().build();
-        } catch (SessionNotFoundException | SessionExpiredException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(e.getMessage());
-        }
-    }
-    
-    /**
-     * Annule les modifications d'une session
-     */
-    @PostMapping("/{sessionId}/cancel")
-    public ResponseEntity<?> cancelSession(@PathVariable String sessionId) {
-        try {
-            editSessionService.cancelSession(sessionId);
-            return ResponseEntity.ok().build();
-        } catch (SessionNotFoundException | SessionExpiredException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(e.getMessage());
-        }
-    }
-    
-    /**
-     * Vérifie si une session est valide
-     */
-    @GetMapping("/{sessionId}/validate")
-    public ResponseEntity<?> validateSession(@PathVariable String sessionId) {
-        boolean isValid = editSessionService.isSessionValid(sessionId);
-        return ResponseEntity.ok(isValid);
-    }
+  /** Starts an edit session */
+  @PostMapping("/start")
+  public ResponseEntity<?> startSession(@RequestBody SessionStartDTO request) {
+    try {
+      String sessionId =
+          editSessionServiceImpl.startSession(request.getEntityType(), request.getEntityId());
 
-    /**
-     * Démarre une session pour créer une nouvelle entité
-     */
-    @PostMapping("/start-create")
-    public ResponseEntity<?> startCreateSession(@RequestBody SessionStartDTO request) {
-        try {
-            String sessionId = editSessionService.startCreateSession(request.getEntityType());
-            
-            SessionResponseDTO response = new SessionResponseDTO(
-                sessionId,
-                request.getEntityType(),
-                null,  // Pas d'ID d'entité car c'est une création
-                null   // expiresAt sera rempli par le service
-            );
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+      SessionResponseDTO response =
+          new SessionResponseDTO(
+              sessionId,
+              request.getEntityType(),
+              request.getEntityId(),
+              null // expiresAt will be filled by the service
+              );
+
+      return ResponseEntity.ok(response);
+    } catch (EntityLockedException e) {
+      return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
     }
+  }
+
+  /** Confirms session modifications */
+  @PostMapping("/{sessionId}/confirm")
+  public ResponseEntity<?> confirmSession(@PathVariable String sessionId) {
+    try {
+      editSessionServiceImpl.confirmSession(sessionId);
+      return ResponseEntity.ok().build();
+    } catch (SessionNotFoundException | SessionExpiredException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+  }
+
+  /** Cancels session modifications */
+  @PostMapping("/{sessionId}/cancel")
+  public ResponseEntity<?> cancelSession(@PathVariable String sessionId) {
+    try {
+      editSessionServiceImpl.cancelSession(sessionId);
+      return ResponseEntity.ok().build();
+    } catch (SessionNotFoundException | SessionExpiredException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+  }
+
+  /** Checks if a session is valid */
+  @GetMapping("/{sessionId}/validate")
+  public ResponseEntity<?> validateSession(@PathVariable String sessionId) {
+    boolean isValid = editSessionServiceImpl.isSessionValid(sessionId);
+    return ResponseEntity.ok(isValid);
+  }
+
+  /** Starts a session to create a new entity */
+  @PostMapping("/start-create")
+  public ResponseEntity<?> startCreateSession(@RequestBody SessionStartDTO request) {
+    try {
+      String sessionId = editSessionServiceImpl.startCreateSession(request.getEntityType());
+
+      SessionResponseDTO response =
+          new SessionResponseDTO(
+              sessionId,
+              request.getEntityType(),
+              null, // No entity ID as this is a creation
+              null // expiresAt will be filled by the service
+              );
+
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
 }

@@ -1,13 +1,5 @@
 package com.ecommerce.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ecommerce.exception.OrderException;
 import com.ecommerce.exception.UserNotFoundException;
 import com.ecommerce.model.dto.OrderCreateDTO;
@@ -17,146 +9,185 @@ import com.ecommerce.model.entity.User;
 import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.interfaces.OrderService;
-
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
 @Transactional
 public class OrderServiceImpl implements OrderService {
 
-    private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
+  private final OrderRepository orderRepository;
+  private final UserRepository userRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository) {
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
+  public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository) {
+    this.orderRepository = orderRepository;
+    this.userRepository = userRepository;
+  }
+
+  @Override
+  @Transactional
+  public Order createOrder(OrderCreateDTO orderDTO) {
+    if (orderDTO == null) {
+      throw new IllegalArgumentException("Order data cannot be null");
     }
 
-    @Override
-    @Transactional
-    public Order createOrder(OrderCreateDTO orderDTO) {
-        Order order = new Order();
-        order.setCustomerEmail(orderDTO.getEmail());
-        
-
-        if (orderDTO.getUserId() != null) {
-            User user = userRepository.findById(orderDTO.getUserId())
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
-            order.setUser(user);
-        }
-        
-        order.setShippingName(orderDTO.getShippingName());
-        order.setShippingAddress(orderDTO.getShippingAddress());
-        order.setShippingPhone(orderDTO.getShippingPhone());
-        
-        
-        return orderRepository.save(order);
+    if (orderDTO.getEmail() == null || !orderDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+      throw new IllegalArgumentException("Invalid email");
     }
 
-    @Override
-    public Order findOrderById(Long id) {
-        if(id <= 0) {
-            throw new IllegalArgumentException("L'ID doit être positif");
-        }
-        return orderRepository.findById(id).orElseThrow(() -> new OrderException("id"));
+    if (orderDTO.getShippingName() == null || orderDTO.getShippingName().trim().isEmpty()) {
+      throw new IllegalArgumentException("Shipping name is required");
     }
 
-    @Override
-    public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
+    if (orderDTO.getShippingAddress() == null || orderDTO.getShippingAddress().trim().isEmpty()) {
+      throw new IllegalArgumentException("Shipping address is required");
     }
 
-    @Override
-    public Page<Order> findAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable);
+    if (orderDTO.getShippingPhone() == null
+        || !orderDTO.getShippingPhone().matches("^\\+?[0-9]{10,15}$")) {
+      throw new IllegalArgumentException("Invalid phone number");
     }
 
-    
+    Order order = new Order();
+    order.setCustomerEmail(orderDTO.getEmail());
 
-    @Override
-    public Page<Order> findOrdersByStatus(Status status, Pageable pageable) {
-        log.debug("Recherche des commandes avec le statut: {}", status);
-        try {
-            return orderRepository.findByStatus(status, pageable);
-        } catch (Exception e) {
-            log.error("Erreur lors de la recherche des commandes par statut", e);
-            throw new OrderException("Erreur lors de la recherche des commandes par statut: " + e.getMessage());
-        }
-    }
-    public List<Order> findOrdersByMonth(Integer month) {
-        if (month < 0) {
-            throw new IllegalArgumentException("Le mois ne peut pas être plus petit que 0");
-        }
-        
-        if (month > 12) {
-            throw new IllegalArgumentException("Le mois ne peut pas être supérieur à 12");
-        }
-        
-        try {
-            LocalDateTime startOfMonth = LocalDateTime.now()
-                .withMonth(month)
-                .withDayOfMonth(1)
-                .withHour(0)
-                .withMinute(0)
-                .withSecond(0);
-                
-            LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
-            
-            return orderRepository.findBetweenDates(startOfMonth, endOfMonth, Pageable.unpaged())
-                .getContent();
-                
-        } catch (Exception e) {
-            log.error("Erreur lors de la récupération des commandes par mois", e);
-            throw new OrderException("Erreur lors de la récupération des commandes par mois: " + e.getMessage());
-        }
+    if (orderDTO.getUserId() != null) {
+      User user =
+          userRepository
+              .findById(orderDTO.getUserId())
+              .orElseThrow(() -> new UserNotFoundException("User not found"));
+      order.setUser(user);
     }
 
-    @Override
-    public Page<Order> findOrdersBetweenDates(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
-        log.debug("Recherche des commandes entre {} et {}", startDate, endDate);
-        
-        if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Les dates de début et de fin ne peuvent pas être nulles");
-        }
-        
-        if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("La date de début doit être antérieure à la date de fin");
-        }
-        
-        try {
-            return orderRepository.findBetweenDates(startDate, endDate, pageable);
-        } catch (Exception e) {
-            log.error("Erreur lors de la recherche des commandes entre deux dates", e);
-            throw new OrderException("Erreur lors de la recherche des commandes entre deux dates: " + e.getMessage());
-        }
+    order.setShippingName(orderDTO.getShippingName());
+    order.setShippingAddress(orderDTO.getShippingAddress());
+    order.setShippingPhone(orderDTO.getShippingPhone());
+
+    return orderRepository.save(order);
+  }
+
+  @Override
+  public Order findOrderById(Long id) {
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
+    }
+    return orderRepository.findById(id).orElseThrow(() -> new OrderException("id"));
+  }
+
+  @Override
+  public void deleteOrder(Long id) {
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
     }
 
-    @Override
-    @Transactional
-    public Order updateOrderStatus(Long id, Status newStatus) {
-        log.debug("Mise à jour du statut de la commande {} vers {}", id, newStatus);
-        
-        if (id <= 0) {
-            throw new IllegalArgumentException("L'ID doit être positif");
-        }
-        
-        if (newStatus == null) {
-            throw new IllegalArgumentException("Le nouveau statut ne peut pas être null");
-        }
-        
-        try {
-            Order order = findOrderById(id);
-            order.setStatus(newStatus);
-            return orderRepository.save(order);
-        } catch (OrderException e) {
-            log.error("Commande non trouvée pour la mise à jour du statut - id: {}", id);
-            throw new OrderException("Commande non trouvée pour la mise à jour du statut: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("Erreur lors de la mise à jour du statut de la commande", e);
-            throw new OrderException("Erreur lors de la mise à jour du statut de la commande: " + e.getMessage());
-        }
+    if (!orderRepository.existsById(id)) {
+      throw new OrderException("Order not found with ID: " + id);
     }
-    
 
+    try {
+      orderRepository.deleteById(id);
+    } catch (Exception e) {
+      log.error("Error deleting order {}", id, e);
+      throw new OrderException("Error deleting order: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public Page<Order> findAllOrders(Pageable pageable) {
+    return orderRepository.findAll(pageable);
+  }
+
+  @Override
+  public Page<Order> findOrdersByStatus(Status status, Pageable pageable) {
+    log.debug("Searching orders with status: {}", status);
+    try {
+      return orderRepository.findByStatus(status, pageable);
+    } catch (Exception e) {
+      log.error("Error searching orders by status", e);
+      throw new OrderException("Error searching orders by status: " + e.getMessage());
+    }
+  }
+
+  public List<Order> findOrdersByMonth(Integer month) {
+    if (month < 0) {
+      throw new IllegalArgumentException("Month cannot be less than 0");
+    }
+
+    if (month > 12) {
+      throw new IllegalArgumentException("Month cannot be greater than 12");
+    }
+
+    try {
+      LocalDateTime startOfMonth =
+          LocalDateTime.now()
+              .withMonth(month)
+              .withDayOfMonth(1)
+              .withHour(0)
+              .withMinute(0)
+              .withSecond(0);
+
+      LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
+
+      return orderRepository
+          .findBetweenDates(startOfMonth, endOfMonth, Pageable.unpaged())
+          .getContent();
+
+    } catch (Exception e) {
+      log.error("Error retrieving orders by month", e);
+      throw new OrderException("Error retrieving orders by month: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public Page<Order> findOrdersBetweenDates(
+      LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    log.debug("Searching orders between {} and {}", startDate, endDate);
+
+    if (startDate == null || endDate == null) {
+      throw new IllegalArgumentException("Start and end dates cannot be null");
+    }
+
+    if (startDate.isAfter(endDate)) {
+      throw new IllegalArgumentException("Start date must be before end date");
+    }
+
+    try {
+      return orderRepository.findBetweenDates(startDate, endDate, pageable);
+    } catch (Exception e) {
+      log.error("Error searching orders between dates", e);
+      throw new OrderException("Error searching orders between dates: " + e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public Order updateOrderStatus(Long id, Status newStatus) {
+    log.debug("Updating order status {} to {}", id, newStatus);
+
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
+    }
+
+    if (newStatus == null) {
+      throw new IllegalArgumentException("New status cannot be null");
+    }
+
+    try {
+      Order order = findOrderById(id);
+      order.setStatus(newStatus);
+      return orderRepository.save(order);
+    } catch (OrderException e) {
+      log.error("Order not found for status update - id: {}", id);
+      throw new OrderException("Order not found for status update: " + e.getMessage());
+    } catch (Exception e) {
+      log.error("Error updating order status", e);
+      throw new OrderException("Error updating order status: " + e.getMessage());
+    }
+  }
 }
