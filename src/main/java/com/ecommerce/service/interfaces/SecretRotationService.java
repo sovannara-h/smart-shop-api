@@ -1,16 +1,18 @@
 package com.ecommerce.service.interfaces;
 
+/** Service for security key rotation and management */
 public interface SecretRotationService {
     
     /**
-     * Génère une chaîne de caractères aléatoire et sécurisée pour être utilisée comme secret
-     * @return la chaîne de caractères générée
+     * Generates a secure random string to be used as a secret
+     * 
+     * @return the generated secure string
      */
     String generateSecureSecret();
     
     /**
-     * Effectue la rotation du secret JWT selon la planification configurée
-     * Remplace l'ancien secret par un nouveau et met à jour le fournisseur de token JWT
+     * Performs JWT secret rotation according to the configured schedule
+     * Replaces the old secret with a new one and updates the JWT token provider
      */
     void rotateJwtSecret();
 }
