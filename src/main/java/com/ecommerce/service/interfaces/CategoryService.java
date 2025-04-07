@@ -1,9 +1,8 @@
 package com.ecommerce.service.interfaces;
 
+import com.ecommerce.model.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import com.ecommerce.model.entity.Category;
 
 /** Service for product category management */
 public interface CategoryService {

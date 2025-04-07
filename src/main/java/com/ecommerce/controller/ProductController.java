@@ -1,20 +1,7 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.exception.ProductException;
-import com.ecommerce.model.dto.ApiResponse;
-import com.ecommerce.model.dto.ProductCreateDTO;
-import com.ecommerce.model.entity.Product;
-import com.ecommerce.service.impl.ProductServiceImpl;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
-import io.micrometer.core.annotation.Timed;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +23,22 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.ecommerce.exception.ProductException;
+import com.ecommerce.model.dto.ApiResponse;
+import com.ecommerce.model.dto.ProductCreateDTO;
+import com.ecommerce.model.entity.Product;
+import com.ecommerce.service.impl.ProductServiceImpl;
+
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.micrometer.core.annotation.Timed;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -50,6 +54,7 @@ public class ProductController {
   @Timed(value = "product.creation.time", description = "Product creation time")
   @PostMapping
   @RateLimiter(name = "createProduct")
+  @Transactional
   public ResponseEntity<ApiResponse<Product>> createProduct(
       @Valid @RequestBody ProductCreateDTO dto,
       @RequestHeader(value = "X-Session-Id", required = false) String sessionId) {
@@ -79,6 +84,7 @@ public class ProductController {
   @PutMapping("/{id}")
   @CachePut(value = "products", key = "#id")
   @RateLimiter(name = "updateProduct")
+  @Transactional
   public ResponseEntity<ApiResponse<Product>> updateProduct(
       @Parameter(description = "Product ID") @PathVariable @Positive Long id,
       @Parameter(description = "Product data") @Valid @RequestBody Product product,
@@ -138,6 +144,7 @@ public class ProductController {
   @DeleteMapping("/{id}")
   @CacheEvict(value = "products", key = "#id")
   @RateLimiter(name = "deleteProduct")
+  @Transactional
   public ResponseEntity<Void> deleteProduct(
       @Parameter(description = "Product ID") @PathVariable @Positive Long id) {
     log.debug("Deleting product - id: {}", id);
@@ -159,6 +166,7 @@ public class ProductController {
 
   @Operation(summary = "Get all products", description = "Returns a paginated list of all products")
   @GetMapping
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Page<Product>>> getAllProducts(
       @Parameter(description = "Page number (starts at 0)") @RequestParam(defaultValue = "0")
           int page,
@@ -190,6 +198,7 @@ public class ProductController {
   @GetMapping("/{id}")
   @Cacheable(value = "products", key = "#id")
   @RateLimiter(name = "getProduct")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Product>> getProductById(
       @Parameter(description = "Product ID") @PathVariable @Positive Long id) {
     log.debug("Finding product with ID: {}", id);
@@ -213,6 +222,7 @@ public class ProductController {
   }
 
   @GetMapping("/count")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Long>> getProductCount() {
     try {
       long count = productService.getProductCount();

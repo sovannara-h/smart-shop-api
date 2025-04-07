@@ -58,7 +58,69 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @Transactional(readOnly=true)
+  public Product findProductById(Long id) {
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
+    }
+    return productRepository.findById(id).orElseThrow(() -> new ProductException("id"));
+  }
+
+  @Override
+  @Transactional(readOnly=true)
+  public Page<Product> findAllProducts(Pageable pageable) {
+    return productRepository.findAll(pageable);
+  }
+
+  @Override
+  @Transactional(readOnly=true)
+  public Page<Product> findProductsByCategory(Category category, Pageable pageable) {
+    return productRepository.findProductsByCategory(category, pageable);
+  }
+
+
+  @Transactional(readOnly=true)
+  public long getProductCount() {
+    return productRepository.count();
+  }
+
   @Transactional
+  public Product updateProductInSession(String sessionId, Long id, Product product) {
+    Product existingProduct = findProductById(id);
+
+    if (!sessionId.equals(existingProduct.getSessionId())) {
+      throw new IllegalStateException("Product is not in the specified session");
+    }
+
+    _updateProductFields(existingProduct, product);
+
+    existingProduct.setSessionId(sessionId);
+
+    return productRepository.save(existingProduct);
+  }
+
+  @Transactional
+  public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
+    if (!editSessionServiceImpl.isSessionValid(sessionId)) {
+      throw new SessionExpiredException("Session has expired or does not exist");
+    }
+
+    Product product = new Product();
+    product.setName(dto.getName());
+    product.setDescription(dto.getDescription());
+    product.setActive(false);
+
+    product.setSessionId(sessionId);
+
+    Product savedProduct = productRepository.save(product);
+
+    editSessionServiceImpl.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
+
+    return savedProduct;
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
   public Product createProduct(ProductCreateDTO dto) {
     log.debug("Creating new product: {}", dto.getName());
 
@@ -115,6 +177,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @Transactional
   public void deleteProduct(Long id) {
     try {
       productRepository.deleteById(id);
@@ -123,60 +186,4 @@ public class ProductServiceImpl implements ProductService {
     }
   }
 
-  @Override
-  public Product findProductById(Long id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("ID must be positive");
-    }
-    return productRepository.findById(id).orElseThrow(() -> new ProductException("id"));
-  }
-
-  @Override
-  public Page<Product> findAllProducts(Pageable pageable) {
-    return productRepository.findAll(pageable);
-  }
-
-  @Override
-  public Page<Product> findProductsByCategory(Category category, Pageable pageable) {
-    return productRepository.findProductsByCategory(category, pageable);
-  }
-
-  public long getProductCount() {
-    return productRepository.count();
-  }
-
-  @Transactional
-  public Product updateProductInSession(String sessionId, Long id, Product product) {
-    Product existingProduct = findProductById(id);
-
-    if (!sessionId.equals(existingProduct.getSessionId())) {
-      throw new IllegalStateException("Product is not in the specified session");
-    }
-
-    _updateProductFields(existingProduct, product);
-
-    existingProduct.setSessionId(sessionId);
-
-    return productRepository.save(existingProduct);
-  }
-
-  @Transactional
-  public Product createProductInSession(String sessionId, ProductCreateDTO dto) {
-    if (!editSessionServiceImpl.isSessionValid(sessionId)) {
-      throw new SessionExpiredException("Session has expired or does not exist");
-    }
-
-    Product product = new Product();
-    product.setName(dto.getName());
-    product.setDescription(dto.getDescription());
-    product.setActive(false);
-
-    product.setSessionId(sessionId);
-
-    Product savedProduct = productRepository.save(product);
-
-    editSessionServiceImpl.registerEntityCreation(sessionId, "PRODUCT", savedProduct.getId());
-
-    return savedProduct;
-  }
 }

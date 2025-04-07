@@ -193,6 +193,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     return formattedCombinations;
   }
 
+  @Transactional
   private ProductVariant createVariant(
       Product product, Map<String, String> combination, ProductVariantGenerateCombinationDTO dto) {
     try {
@@ -281,6 +282,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
   }
 
+  @Transactional(rollbackFor = Exception.class)
   public List<ProductVariant> batchUpsert(List<VariantCreateDTO> variants, Long productId) {
     log.info("VARIANTS UPSERT: {}", variants);
     if (variants.isEmpty()) {
@@ -382,6 +384,51 @@ public class ProductVariantServiceImpl implements ProductVariantService {
         });
   }
 
+  @Override
+  @Transactional(readOnly=true)
+  public List<ProductVariant> generateVariantCombinations(
+      ProductVariantGenerateCombinationDTO dto) {
+    // On utilise la méthode generateVariants existante qui génère déjà les combinaisons
+    List<Map<String, Object>> variants = generateVariants(dto);
+
+    // Convertir en liste de ProductVariant
+    return productVariantRepository.findAllByProductId(dto.getProductId());
+  }
+
+  @Override
+  @Transactional(readOnly=true)
+  public ProductVariant findVariantById(Long id) {
+    return productVariantRepository
+        .findById(id)
+        .orElseThrow(() -> new RuntimeException("Variant not found with ID: " + id));
+  }
+
+  @Override
+  @Transactional(readOnly=true)
+  public List<ProductVariant> findVariantsByProductId(Long productId) {
+    return findAllByProductId(productId);
+  }
+
+  @Override
+  @Transactional
+  public ProductVariant createVariant(ProductVariant variant) {
+    return productVariantRepository.save(variant);
+  }
+
+  @Override
+  @Transactional
+  public ProductVariant updateVariant(Long id, ProductVariant variant) {
+    ProductVariant existingVariant = findVariantById(id);
+    variant.setId(id);
+    return productVariantRepository.save(variant);
+  }
+
+  @Override
+  @Transactional(rollbackFor={Exception.class})
+  public void deleteVariant(Long id) {
+    productVariantRepository.deleteById(id);
+  }
+
   @Transactional
   public List<ProductVariant> batchUpsertVariants(List<VariantCreateDTO> variants, Long productId) {
     try {
@@ -454,40 +501,4 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
   }
 
-  @Override
-  public List<ProductVariant> generateVariantCombinations(ProductVariantGenerateCombinationDTO dto) {
-    // On utilise la méthode generateVariants existante qui génère déjà les combinaisons
-    List<Map<String, Object>> variants = generateVariants(dto);
-    
-    // Convertir en liste de ProductVariant
-    return productVariantRepository.findAllByProductId(dto.getProductId());
-  }
-  
-  @Override
-  public ProductVariant findVariantById(Long id) {
-    return productVariantRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Variant not found with ID: " + id));
-  }
-  
-  @Override
-  public List<ProductVariant> findVariantsByProductId(Long productId) {
-    return findAllByProductId(productId);
-  }
-  
-  @Override
-  public ProductVariant createVariant(ProductVariant variant) {
-    return productVariantRepository.save(variant);
-  }
-  
-  @Override
-  public ProductVariant updateVariant(Long id, ProductVariant variant) {
-    ProductVariant existingVariant = findVariantById(id);
-    variant.setId(id);
-    return productVariantRepository.save(variant);
-  }
-  
-  @Override
-  public void deleteVariant(Long id) {
-    productVariantRepository.deleteById(id);
-  }
 }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.service.interfaces.NotificationService;
 
@@ -31,12 +32,13 @@ public class NotificationServiceImpl implements NotificationService {
     // this.slack = Slack.getInstance();
   }
 
-  // Constructeur par défaut si JavaMailSender n'est pas disponible
+
   public NotificationServiceImpl() {
     this.emailSender = null;
     log.info("NotificationService created without emailSender");
   }
 
+  @Transactional
   public void sendEmail(String message) {
     try {
       SimpleMailMessage email = new SimpleMailMessage();

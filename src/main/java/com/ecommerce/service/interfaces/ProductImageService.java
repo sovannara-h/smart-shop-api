@@ -1,9 +1,8 @@
 package com.ecommerce.service.interfaces;
 
-import java.util.List;
-
 import com.ecommerce.model.dto.ProductImageUpsertDTO;
 import com.ecommerce.model.entity.ProductImage;
+import java.util.List;
 
 /** Service for product image management */
 public interface ProductImageService {
@@ -14,8 +13,9 @@ public interface ProductImageService {
    * @param productId product identifier
    * @return list of created/updated product images
    */
-  List<ProductImage> upsertProductImagesInBatch(List<ProductImageUpsertDTO> productImages, Long productId);
-  
+  List<ProductImage> upsertProductImagesInBatch(
+      List<ProductImageUpsertDTO> productImages, Long productId);
+
   /**
    * Creates or updates product images for a specific product
    *
@@ -24,7 +24,7 @@ public interface ProductImageService {
    * @return list of created/updated product images
    */
   List<ProductImage> upsertProductImages(List<ProductImageUpsertDTO> productImages, Long productId);
-  
+
   /**
    * Creates or updates product images within an edit session
    *
@@ -33,5 +33,6 @@ public interface ProductImageService {
    * @param productId product identifier
    * @return list of created/updated product images
    */
-  List<ProductImage> upsertProductImagesInSession(String sessionId, List<ProductImageUpsertDTO> productImages, Long productId);
+  List<ProductImage> upsertProductImagesInSession(
+      String sessionId, List<ProductImageUpsertDTO> productImages, Long productId);
 }

@@ -1,5 +1,14 @@
 package com.ecommerce.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ecommerce.exception.OrderException;
 import com.ecommerce.exception.UserNotFoundException;
 import com.ecommerce.model.dto.OrderCreateDTO;
@@ -9,13 +18,8 @@ import com.ecommerce.model.entity.User;
 import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.interfaces.OrderService;
-import java.time.LocalDateTime;
-import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -31,48 +35,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  @Transactional
-  public Order createOrder(OrderCreateDTO orderDTO) {
-    if (orderDTO == null) {
-      throw new IllegalArgumentException("Order data cannot be null");
-    }
-
-    if (orderDTO.getEmail() == null || !orderDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-      throw new IllegalArgumentException("Invalid email");
-    }
-
-    if (orderDTO.getShippingName() == null || orderDTO.getShippingName().trim().isEmpty()) {
-      throw new IllegalArgumentException("Shipping name is required");
-    }
-
-    if (orderDTO.getShippingAddress() == null || orderDTO.getShippingAddress().trim().isEmpty()) {
-      throw new IllegalArgumentException("Shipping address is required");
-    }
-
-    if (orderDTO.getShippingPhone() == null
-        || !orderDTO.getShippingPhone().matches("^\\+?[0-9]{10,15}$")) {
-      throw new IllegalArgumentException("Invalid phone number");
-    }
-
-    Order order = new Order();
-    order.setCustomerEmail(orderDTO.getEmail());
-
-    if (orderDTO.getUserId() != null) {
-      User user =
-          userRepository
-              .findById(orderDTO.getUserId())
-              .orElseThrow(() -> new UserNotFoundException("User not found"));
-      order.setUser(user);
-    }
-
-    order.setShippingName(orderDTO.getShippingName());
-    order.setShippingAddress(orderDTO.getShippingAddress());
-    order.setShippingPhone(orderDTO.getShippingPhone());
-
-    return orderRepository.save(order);
-  }
-
-  @Override
+  @Transactional(readOnly = true)
   public Order findOrderById(Long id) {
     if (id <= 0) {
       throw new IllegalArgumentException("ID must be positive");
@@ -81,29 +44,13 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public void deleteOrder(Long id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("ID must be positive");
-    }
-
-    if (!orderRepository.existsById(id)) {
-      throw new OrderException("Order not found with ID: " + id);
-    }
-
-    try {
-      orderRepository.deleteById(id);
-    } catch (Exception e) {
-      log.error("Error deleting order {}", id, e);
-      throw new OrderException("Error deleting order: " + e.getMessage());
-    }
-  }
-
-  @Override
+  @Transactional(readOnly = true)
   public Page<Order> findAllOrders(Pageable pageable) {
     return orderRepository.findAll(pageable);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Page<Order> findOrdersByStatus(Status status, Pageable pageable) {
     log.debug("Searching orders with status: {}", status);
     try {
@@ -114,6 +61,7 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  @Transactional(readOnly=true)
   public List<Order> findOrdersByMonth(Integer month) {
     if (month < 0) {
       throw new IllegalArgumentException("Month cannot be less than 0");
@@ -145,6 +93,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Page<Order> findOrdersBetweenDates(
       LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
     log.debug("Searching orders between {} and {}", startDate, endDate);
@@ -190,4 +139,66 @@ public class OrderServiceImpl implements OrderService {
       throw new OrderException("Error updating order status: " + e.getMessage());
     }
   }
+
+  @Override
+  @Transactional(isolation=Isolation.READ_COMMITTED, rollbackFor=Exception.class)
+  public Order createOrder(OrderCreateDTO orderDTO) {
+    if (orderDTO == null) {
+      throw new IllegalArgumentException("Order data cannot be null");
+    }
+
+    if (orderDTO.getEmail() == null || !orderDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+      throw new IllegalArgumentException("Invalid email");
+    }
+
+    if (orderDTO.getShippingName() == null || orderDTO.getShippingName().trim().isEmpty()) {
+      throw new IllegalArgumentException("Shipping name is required");
+    }
+
+    if (orderDTO.getShippingAddress() == null || orderDTO.getShippingAddress().trim().isEmpty()) {
+      throw new IllegalArgumentException("Shipping address is required");
+    }
+
+    if (orderDTO.getShippingPhone() == null
+        || !orderDTO.getShippingPhone().matches("^\\+?[0-9]{10,15}$")) {
+      throw new IllegalArgumentException("Invalid phone number");
+    }
+
+    Order order = new Order();
+    order.setCustomerEmail(orderDTO.getEmail());
+
+    if (orderDTO.getUserId() != null) {
+      User user =
+          userRepository
+              .findById(orderDTO.getUserId())
+              .orElseThrow(() -> new UserNotFoundException("User not found"));
+      order.setUser(user);
+    }
+
+    order.setShippingName(orderDTO.getShippingName());
+    order.setShippingAddress(orderDTO.getShippingAddress());
+    order.setShippingPhone(orderDTO.getShippingPhone());
+
+    return orderRepository.save(order);
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public void deleteOrder(Long id) {
+    if (id <= 0) {
+      throw new IllegalArgumentException("ID must be positive");
+    }
+
+    if (!orderRepository.existsById(id)) {
+      throw new OrderException("Order not found with ID: " + id);
+    }
+
+    try {
+      orderRepository.deleteById(id);
+    } catch (Exception e) {
+      log.error("Error deleting order {}", id, e);
+      throw new OrderException("Error deleting order: " + e.getMessage());
+    }
+  }
+
 }

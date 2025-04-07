@@ -1,13 +1,11 @@
 package com.ecommerce.service.interfaces;
 
-import java.time.LocalDateTime;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import com.ecommerce.model.dto.OrderCreateDTO;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.Order.Status;
+import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /** Service for order management */
 public interface OrderService {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +37,7 @@ public class ProductImageController {
   private final ProductRepository productRepository;
 
   @PostMapping
+  @Transactional
   public ResponseEntity<ApiResponse<List<ProductImage>>> upsertProductImages(
       @PathVariable Long productId,
       @Valid @RequestBody ProductImagesUpsertDTO dto,
@@ -68,7 +70,8 @@ public class ProductImageController {
             productImageServiceImpl.upsertProductImagesInSession(
                 sessionId, dto.getProductImages(), productId);
       } else {
-        productImages = productImageServiceImpl.upsertProductImages(dto.getProductImages(), productId);
+        productImages =
+            productImageServiceImpl.upsertProductImages(dto.getProductImages(), productId);
       }
 
       return ResponseEntity.ok(

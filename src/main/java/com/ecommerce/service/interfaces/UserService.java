@@ -33,13 +33,13 @@ public interface UserService {
    */
   User findUserByEmail(String email) throws UserNotFoundException;
 
-  /**
-   * Checks if an email is already in use
-   *
-   * @param email email to check
-   * @return true if the email already exists
-   */
-  boolean existsByEmail(String email);
+  // /**
+  //  * Checks if an email is already in use
+  //  *
+  //  * @param email email to check
+  //  * @return true if the email already exists
+  //  */
+  // boolean existsByEmail(String email);
 
   /**
    * Updates a user's information

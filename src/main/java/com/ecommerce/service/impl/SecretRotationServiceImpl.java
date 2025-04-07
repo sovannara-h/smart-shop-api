@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SecretRotationServiceImpl implements  SecretRotationService {
+public class SecretRotationServiceImpl implements SecretRotationService {
   private final VaultTemplate vaultTemplate;
   private final JwtTokenProvider jwtTokenProvider;
   private final NotificationServiceImpl notificationServiceImpl;
@@ -26,11 +26,12 @@ public class SecretRotationServiceImpl implements  SecretRotationService {
   @Value("${secret.rotation.jwt.cron}")
   private String jwtRotationCron;
 
-  public String generateSecureSecret() {
+  private String generateSecureSecret() {
     return UUID.randomUUID().toString() + UUID.randomUUID().toString() + System.currentTimeMillis();
   }
 
   @Scheduled(cron = "${secret.rotation.jwt.cron}")
+  @Override
   public void rotateJwtSecret() {
     try {
       log.info("Starting JWT secret rotation");

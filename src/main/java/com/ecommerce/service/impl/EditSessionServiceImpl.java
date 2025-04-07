@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.exception.EntityLockedException;
 import com.ecommerce.exception.EntityNotFoundException;
@@ -26,7 +29,6 @@ import com.ecommerce.service.interfaces.EditSessionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -113,6 +115,190 @@ public class EditSessionServiceImpl implements EditSessionService {
     entityState.remove("hibernateLazyInitializer");
   }
 
+  private List<String> determineProcessingOrder(Set<String> entityTypes) {
+      Map<String, Integer> priorityMap = new HashMap<>();
+
+      priorityMap.put("ATTRIBUTEVALUE", 1);
+      priorityMap.put("VARIANT", 2);
+      priorityMap.put("PRODUCT", 3);
+      priorityMap.put("CATEGORY", 3);
+      priorityMap.put("USER", 4);
+
+      return entityTypes.stream()
+          .sorted(Comparator.comparingInt(type -> priorityMap.getOrDefault(type, 100)))
+          .collect(Collectors.toList());
+    }
+
+  private Object convertValueToType(Object value, Class<?> targetType) {
+    if (value == null) return null;
+
+    if (targetType.isAssignableFrom(value.getClass())) {
+      return value;
+    }
+
+    if (targetType == String.class) {
+      return value.toString();
+    } else if (targetType == Integer.class || targetType == int.class) {
+      return value instanceof Number
+          ? ((Number) value).intValue()
+          : Integer.parseInt(value.toString());
+    } else if (targetType == Long.class || targetType == long.class) {
+      return value instanceof Number
+          ? ((Number) value).longValue()
+          : Long.parseLong(value.toString());
+    } else if (targetType == Double.class || targetType == double.class) {
+      return value instanceof Number
+          ? ((Number) value).doubleValue()
+          : Double.parseDouble(value.toString());
+    } else if (targetType == Boolean.class || targetType == boolean.class) {
+      return value instanceof Boolean ? value : Boolean.parseBoolean(value.toString());
+    } else if (targetType == LocalDateTime.class && value instanceof String) {
+      return LocalDateTime.parse((String) value);
+    } else if (targetType.isEnum() && value instanceof String) {
+      return Enum.valueOf((Class<Enum>) targetType, (String) value);
+    }
+
+    // For complex types, use Jackson
+    return objectMapper.convertValue(value, targetType);
+  }
+
+  @Transactional
+  private void restoreEntityFromState(Object entity, Map<String, Object> state) {
+    if (state == null) return;
+
+    for (Map.Entry<String, Object> entry : state.entrySet()) {
+      String property = entry.getKey();
+      Object value = entry.getValue();
+
+      if (property.equals("id") || property.equals("version")) continue;
+
+      String setterName = "set" + property.substring(0, 1).toUpperCase() + property.substring(1);
+
+      try {
+        Method[] methods = entity.getClass().getMethods();
+        for (Method method : methods) {
+          if (method.getName().equals(setterName) && method.getParameterCount() == 1) {
+            Class<?> paramType = method.getParameterTypes()[0];
+            Object convertedValue = convertValueToType(value, paramType);
+            method.invoke(entity, convertedValue);
+            break;
+          }
+        }
+      } catch (Exception e) {
+        log.debug(
+            "Unable to restore property {} on entity {}: {}",
+            property,
+            entity.getClass().getSimpleName(),
+            e.getMessage());
+      }
+    }
+
+    setEntitySessionId(entity, null, null, false);
+  }
+
+  @Transactional(readOnly = true)
+  private String _getSessionId(Object entity) {
+    try {
+      Method getSessionId = entity.getClass().getMethod("getSessionId");
+      String currentSessionId = (String) getSessionId.invoke(entity);
+      if (currentSessionId != null) {
+        throw new EntityLockedException("Entity is already in edit session in another session");
+      }
+      return currentSessionId;
+    } catch (NoSuchMethodException e) {
+      // Entity doesn't have sessionId, this is normal for some entities
+      throw new RuntimeException("Error executing getSessionId method", e);
+    } catch (Exception e) {
+      log.error("Error verifying sessionId: {}", e.getMessage());
+      throw new RuntimeException("Error executing getSessionId method", e);
+    }
+  }
+
+  /**
+   * Sets sessionId on an entity via reflection and saves the entity if requested
+   *
+   * @param entity The entity to modify
+   * @param sessionId The value of sessionId (can be null to clear)
+   * @param repository The repository to save the entity
+   * @param saveEntity Indicates if the entity should be saved
+   * @throws EntitySessionException If an error occurs when invoking the method
+   */
+  @Transactional
+  private void setEntitySessionId(
+      Object entity, String sessionId, JpaRepository<Object, Long> repository, boolean saveEntity) {
+    try {
+      Method setSessionId = entity.getClass().getMethod("setSessionId", String.class);
+      setSessionId.invoke(entity, sessionId);
+
+      if (saveEntity && repository != null) {
+        repository.save(entity);
+      }
+    } catch (NoSuchMethodException e) {
+      // Entity doesn't have setSessionId method, this is normal for some entities
+      log.debug("Entity {} doesn't have setSessionId method", entity.getClass().getSimpleName());
+    } catch (IllegalAccessException e) {
+      log.error(
+          "Illegal access to setSessionId method on {}: {}",
+          entity.getClass().getSimpleName(),
+          e.getMessage());
+      throw new RuntimeException("Illegal access to setSessionId", e);
+    } catch (java.lang.reflect.InvocationTargetException e) {
+      log.error(
+          "Error invoking setSessionId on {}: {}",
+          entity.getClass().getSimpleName(),
+          e.getCause().getMessage());
+      throw new RuntimeException("Error invoking setSessionId", e.getCause());
+    } catch (Exception e) {
+      log.error(
+          "Unexpected error setting sessionId on {}: {}",
+          entity.getClass().getSimpleName(),
+          e.getMessage());
+      throw new RuntimeException("Unexpected error setting sessionId", e);
+    }
+  }
+
+  @Transactional
+  private Object recreateEntityFromState(String entityType, Map<String, Object> state) {
+    if (state == null) return null;
+
+    try {
+      Class<?> entityClass = null;
+      for (Map.Entry<String, JpaRepository<?, Long>> entry : repositories.entrySet()) {
+        if (entry.getKey().equals(entityType)) {
+          entityClass = getEntityClass(entry.getValue());
+          break;
+        }
+      }
+
+      if (entityClass == null) {
+        log.error("Unable to find entity class for type: {}", entityType);
+        return null;
+      }
+
+      Object entity = entityClass.getDeclaredConstructor().newInstance();
+
+      restoreEntityFromState(entity, state);
+
+      return entity;
+    } catch (Exception e) {
+      log.error("Error recreating entity {}: {}", entityType, e.getMessage());
+      return null;
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public LocalDateTime getSessionExpiryTime(String sessionId) {
+    List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
+    if (audits.isEmpty()) {
+      throw new SessionNotFoundException("Session not found: " + sessionId);
+    }
+
+    return audits.stream()
+        .map(EditSessionAudit::getExpiresAt)
+        .max(LocalDateTime::compareTo)
+        .orElse(LocalDateTime.now().plusHours(24));
+  }
+
   @Transactional
   public String startCreateSession(String entityType) {
     String sessionId = UUID.randomUUID().toString();
@@ -135,23 +321,6 @@ public class EditSessionServiceImpl implements EditSessionService {
     auditRepository.save(audit);
 
     return sessionId;
-  }
-
-  private String _getSessionId(Object entity) {
-    try {
-      Method getSessionId = entity.getClass().getMethod("getSessionId");
-      String currentSessionId = (String) getSessionId.invoke(entity);
-      if (currentSessionId != null) {
-        throw new EntityLockedException("Entity is already in edit session in another session");
-      }
-      return currentSessionId;
-    } catch (NoSuchMethodException e) {
-      // Entity doesn't have sessionId, this is normal for some entities
-      throw new RuntimeException("Error executing getSessionId method", e);
-    } catch (Exception e) {
-      log.error("Error verifying sessionId: {}", e.getMessage());
-      throw new RuntimeException("Error executing getSessionId method", e);
-    }
   }
 
   @Transactional
@@ -195,7 +364,7 @@ public class EditSessionServiceImpl implements EditSessionService {
     return sessionId;
   }
 
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRED, isolation=Isolation.READ_COMMITTED, rollbackFor=Exception.class)
   public void confirmSession(String sessionId) {
     List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
 
@@ -216,114 +385,7 @@ public class EditSessionServiceImpl implements EditSessionService {
     auditRepository.deleteBySessionId(sessionId);
   }
 
-  private List<String> determineProcessingOrder(Set<String> entityTypes) {
-    Map<String, Integer> priorityMap = new HashMap<>();
-
-    priorityMap.put("ATTRIBUTEVALUE", 1);
-    priorityMap.put("VARIANT", 2);
-    priorityMap.put("PRODUCT", 3);
-    priorityMap.put("CATEGORY", 3);
-    priorityMap.put("USER", 4);
-
-    return entityTypes.stream()
-        .sorted(Comparator.comparingInt(type -> priorityMap.getOrDefault(type, 100)))
-        .collect(Collectors.toList());
-  }
-
-  private Object convertValueToType(Object value, Class<?> targetType) {
-    if (value == null) return null;
-
-    if (targetType.isAssignableFrom(value.getClass())) {
-      return value;
-    }
-
-    if (targetType == String.class) {
-      return value.toString();
-    } else if (targetType == Integer.class || targetType == int.class) {
-      return value instanceof Number
-          ? ((Number) value).intValue()
-          : Integer.parseInt(value.toString());
-    } else if (targetType == Long.class || targetType == long.class) {
-      return value instanceof Number
-          ? ((Number) value).longValue()
-          : Long.parseLong(value.toString());
-    } else if (targetType == Double.class || targetType == double.class) {
-      return value instanceof Number
-          ? ((Number) value).doubleValue()
-          : Double.parseDouble(value.toString());
-    } else if (targetType == Boolean.class || targetType == boolean.class) {
-      return value instanceof Boolean ? value : Boolean.parseBoolean(value.toString());
-    } else if (targetType == LocalDateTime.class && value instanceof String) {
-      return LocalDateTime.parse((String) value);
-    } else if (targetType.isEnum() && value instanceof String) {
-      return Enum.valueOf((Class<Enum>) targetType, (String) value);
-    }
-
-    // For complex types, use Jackson
-    return objectMapper.convertValue(value, targetType);
-  }
-
-  private void restoreEntityFromState(Object entity, Map<String, Object> state) {
-    if (state == null) return;
-
-    for (Map.Entry<String, Object> entry : state.entrySet()) {
-      String property = entry.getKey();
-      Object value = entry.getValue();
-
-      if (property.equals("id") || property.equals("version")) continue;
-
-      String setterName = "set" + property.substring(0, 1).toUpperCase() + property.substring(1);
-
-      try {
-        Method[] methods = entity.getClass().getMethods();
-        for (Method method : methods) {
-          if (method.getName().equals(setterName) && method.getParameterCount() == 1) {
-            Class<?> paramType = method.getParameterTypes()[0];
-            Object convertedValue = convertValueToType(value, paramType);
-            method.invoke(entity, convertedValue);
-            break;
-          }
-        }
-      } catch (Exception e) {
-        log.debug(
-            "Unable to restore property {} on entity {}: {}",
-            property,
-            entity.getClass().getSimpleName(),
-            e.getMessage());
-      }
-    }
-
-    setEntitySessionId(entity, null, null, false);
-  }
-
-  private Object recreateEntityFromState(String entityType, Map<String, Object> state) {
-    if (state == null) return null;
-
-    try {
-      Class<?> entityClass = null;
-      for (Map.Entry<String, JpaRepository<?, Long>> entry : repositories.entrySet()) {
-        if (entry.getKey().equals(entityType)) {
-          entityClass = getEntityClass(entry.getValue());
-          break;
-        }
-      }
-
-      if (entityClass == null) {
-        log.error("Unable to find entity class for type: {}", entityType);
-        return null;
-      }
-
-      Object entity = entityClass.getDeclaredConstructor().newInstance();
-
-      restoreEntityFromState(entity, state);
-
-      return entity;
-    } catch (Exception e) {
-      log.error("Error recreating entity {}: {}", entityType, e.getMessage());
-      return null;
-    }
-  }
-
+  
   @Transactional
   public void cancelSession(String sessionId) {
     List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
@@ -362,6 +424,7 @@ public class EditSessionServiceImpl implements EditSessionService {
     auditRepository.deleteBySessionId(sessionId);
   }
 
+  @Transactional
   @Scheduled(fixedRate = 3600000) // Execution every hour
   public void cleanupExpiredSessions() {
     LocalDateTime now = LocalDateTime.now();
@@ -395,6 +458,7 @@ public class EditSessionServiceImpl implements EditSessionService {
     }
   }
 
+  @Transactional(readOnly = true)
   public boolean isSessionValid(String sessionId) {
     if (sessionId == null || sessionId.isEmpty()) {
       return false;
@@ -453,57 +517,4 @@ public class EditSessionServiceImpl implements EditSessionService {
     auditRepository.save(audit);
   }
 
-  public LocalDateTime getSessionExpiryTime(String sessionId) {
-    List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
-    if (audits.isEmpty()) {
-      throw new SessionNotFoundException("Session not found: " + sessionId);
-    }
-
-    return audits.stream()
-        .map(EditSessionAudit::getExpiresAt)
-        .max(LocalDateTime::compareTo)
-        .orElse(LocalDateTime.now().plusHours(24));
-  }
-
-  /**
-   * Sets sessionId on an entity via reflection and saves the entity if requested
-   *
-   * @param entity The entity to modify
-   * @param sessionId The value of sessionId (can be null to clear)
-   * @param repository The repository to save the entity
-   * @param saveEntity Indicates if the entity should be saved
-   * @throws EntitySessionException If an error occurs when invoking the method
-   */
-  private void setEntitySessionId(
-      Object entity, String sessionId, JpaRepository<Object, Long> repository, boolean saveEntity) {
-    try {
-      Method setSessionId = entity.getClass().getMethod("setSessionId", String.class);
-      setSessionId.invoke(entity, sessionId);
-
-      if (saveEntity && repository != null) {
-        repository.save(entity);
-      }
-    } catch (NoSuchMethodException e) {
-      // Entity doesn't have setSessionId method, this is normal for some entities
-      log.debug("Entity {} doesn't have setSessionId method", entity.getClass().getSimpleName());
-    } catch (IllegalAccessException e) {
-      log.error(
-          "Illegal access to setSessionId method on {}: {}",
-          entity.getClass().getSimpleName(),
-          e.getMessage());
-      throw new RuntimeException("Illegal access to setSessionId", e);
-    } catch (java.lang.reflect.InvocationTargetException e) {
-      log.error(
-          "Error invoking setSessionId on {}: {}",
-          entity.getClass().getSimpleName(),
-          e.getCause().getMessage());
-      throw new RuntimeException("Error invoking setSessionId", e.getCause());
-    } catch (Exception e) {
-      log.error(
-          "Unexpected error setting sessionId on {}: {}",
-          entity.getClass().getSimpleName(),
-          e.getMessage());
-      throw new RuntimeException("Unexpected error setting sessionId", e);
-    }
-  }
 }

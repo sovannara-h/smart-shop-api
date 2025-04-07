@@ -1,34 +1,38 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.model.dto.AttributeDTO;
-import com.ecommerce.model.dto.CreateAttributeDTO;
-import com.ecommerce.model.entity.Attribute;
-import com.ecommerce.model.entity.AttributeValue;
-import com.ecommerce.repository.AttributeRepository;
-import com.ecommerce.service.interfaces.AttributeService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.model.dto.AttributeDTO;
+import com.ecommerce.model.dto.CreateAttributeDTO;
+import com.ecommerce.model.entity.Attribute;
+import com.ecommerce.model.entity.AttributeValue;
+import com.ecommerce.repository.AttributeRepository;
+import com.ecommerce.service.interfaces.AttributeService;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AttributeServiceImpl implements AttributeService {
 
   private final AttributeRepository attributeRepository;
 
   @Override
+  @Transactional(readOnly=true)
   public List<Attribute> findAllAttributes() {
     return attributeRepository.findAll();
   }
 
   @Override
+  @Transactional(readOnly=true)
   public List<AttributeDTO> findAllWithValues() {
     return attributeRepository.findAllWithValues().stream()
         .<AttributeDTO>map(
@@ -52,6 +56,7 @@ public class AttributeServiceImpl implements AttributeService {
   }
 
   @Override
+  @Transactional(readOnly=true)
   public List<AttributeDTO> findAttributesWithValuesByIds(List<Long> attributeIds) {
     List<Object[]> results = attributeRepository.findAttributesWithValuesByIds(attributeIds);
 

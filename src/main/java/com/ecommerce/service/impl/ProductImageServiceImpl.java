@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Transactional
 @Slf4j
 @RequiredArgsConstructor
 public class ProductImageServiceImpl implements ProductImageService {
@@ -112,6 +111,8 @@ public class ProductImageServiceImpl implements ProductImageService {
     return allResults;
   }
 
+
+  @Transactional
   public List<ProductImage> upsertProductImages(
       List<ProductImageUpsertDTO> productImages, Long productId) {
     List<ProductImage> allResults = new ArrayList<>();

@@ -1,5 +1,12 @@
 package com.ecommerce.controller;
 
+import com.ecommerce.exception.EntityLockedException;
+import com.ecommerce.exception.SessionExpiredException;
+import com.ecommerce.exception.SessionNotFoundException;
+import com.ecommerce.model.dto.SessionResponseDTO;
+import com.ecommerce.model.dto.SessionStartDTO;
+import com.ecommerce.service.impl.EditSessionServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,15 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.ecommerce.exception.EntityLockedException;
-import com.ecommerce.exception.SessionExpiredException;
-import com.ecommerce.exception.SessionNotFoundException;
-import com.ecommerce.model.dto.SessionResponseDTO;
-import com.ecommerce.model.dto.SessionStartDTO;
-import com.ecommerce.service.impl.EditSessionServiceImpl;
-
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/sessions")

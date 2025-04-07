@@ -1,27 +1,15 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.exception.OrderException;
-import com.ecommerce.model.dto.ApiResponse;
-import com.ecommerce.model.dto.OrderCreateDTO;
-import com.ecommerce.model.entity.Order;
-import com.ecommerce.model.entity.Order.Status;
-import com.ecommerce.service.impl.OrderServiceImpl;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
-import io.micrometer.core.annotation.Timed;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +20,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.ecommerce.exception.OrderException;
+import com.ecommerce.model.dto.ApiResponse;
+import com.ecommerce.model.dto.OrderCreateDTO;
+import com.ecommerce.model.entity.Order;
+import com.ecommerce.model.entity.Order.Status;
+import com.ecommerce.service.impl.OrderServiceImpl;
+
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.micrometer.core.annotation.Timed;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -50,6 +54,7 @@ public class OrderController {
   @Timed(value = "order.creation.time", description = "Order creation time")
   @PostMapping
   @RateLimiter(name = "createOrder")
+  @Transactional
   public ResponseEntity<ApiResponse<Order>> createOrder(
       @Valid @RequestBody OrderCreateDTO orderDTO) {
     try {
@@ -67,6 +72,7 @@ public class OrderController {
 
   @Operation(summary = "Get all orders", description = "Returns a paginated list of all orders")
   @GetMapping
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Page<Order>>> getAllOrders(
       @Parameter(description = "Page number (starts at 0)") @RequestParam(defaultValue = "0")
           int page,
@@ -89,6 +95,7 @@ public class OrderController {
 
   @Operation(summary = "Get orders between two dates")
   @GetMapping("/date-range")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Page<Order>>> getOrderBetweenDate(
       @Parameter(description = "Start date") @RequestParam LocalDateTime startDate,
       @Parameter(description = "End date") @RequestParam LocalDateTime endDate,
@@ -110,6 +117,7 @@ public class OrderController {
 
   @Operation(summary = "Get orders by status")
   @GetMapping("/status/{status}")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Page<Order>>> getOrdersByStatus(
       @Parameter(description = "Order status") @PathVariable Status status,
       @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
@@ -131,6 +139,7 @@ public class OrderController {
   @GetMapping("/{id}")
   @Cacheable(value = "orders", key = "#id")
   @RateLimiter(name = "getOrder")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<Order>> getOrderByID(
       @Parameter(description = "Order ID") @PathVariable @Positive Long id) {
     log.debug("Searching for order with ID: {}", id);
@@ -155,6 +164,7 @@ public class OrderController {
 
   @Operation(summary = "Update order status")
   @PutMapping("/{id}/status")
+  @Transactional
   public ResponseEntity<ApiResponse<Order>> updateOrderStatus(
       @Parameter(description = "Order ID") @PathVariable @Positive Long id,
       @Parameter(description = "New status") @RequestParam Status newStatus) {
@@ -182,6 +192,7 @@ public class OrderController {
   @Operation(summary = "Delete an order")
   @DeleteMapping("/{id}")
   @CacheEvict(value = "orders", key = "#id")
+  @Transactional
   public ResponseEntity<ApiResponse<Void>> deleteOrder(
       @Parameter(description = "Order ID") @PathVariable @Positive Long id) {
     try {
@@ -203,6 +214,7 @@ public class OrderController {
 
   @Operation(summary = "Get orders by month")
   @GetMapping("/month")
+  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<List<Order>>> getOrdersPerMonth(
       @Parameter(description = "Month") @RequestParam @Positive Integer month) {
     try {
@@ -218,3 +230,4 @@ public class OrderController {
     }
   }
 }
+  
