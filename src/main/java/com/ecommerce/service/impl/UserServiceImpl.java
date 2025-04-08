@@ -1,9 +1,5 @@
 package com.ecommerce.service.impl;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ecommerce.exception.UserAlreadyExistsException;
 import com.ecommerce.exception.UserException;
 import com.ecommerce.exception.UserNotFoundException;
@@ -11,8 +7,10 @@ import com.ecommerce.model.dto.SignUpRequest;
 import com.ecommerce.model.entity.User;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.interfaces.UserService;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -27,15 +25,15 @@ public class UserServiceImpl implements UserService {
     this.passwordEncoder = passwordEncoder;
   }
 
-private boolean existsByEmail(String email) {
+  private boolean existsByEmail(String email) {
     if (email == null) {
       return false;
     }
     return userRepository.existsByEmail(email);
   }
-  
+
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public User findUserById(Long id) throws UserNotFoundException {
     if (id == null) {
       throw new IllegalArgumentException("L'ID utilisateur ne peut pas être nul");
@@ -46,7 +44,7 @@ private boolean existsByEmail(String email) {
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public User findUserByEmail(String email) throws UserNotFoundException {
     if (email == null || email.trim().isEmpty()) {
       throw new IllegalArgumentException("L'email ne peut pas être nul ou vide");
@@ -117,5 +115,4 @@ private boolean existsByEmail(String email) {
       throw new UserException("Erreur lors de la suppression de l'utilisateur: " + e.getMessage());
     }
   }
-
 }

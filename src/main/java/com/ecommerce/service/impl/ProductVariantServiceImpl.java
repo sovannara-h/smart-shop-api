@@ -1,24 +1,7 @@
 package com.ecommerce.service.impl;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ecommerce.exception.ProductNotFoundException;
+import com.ecommerce.exception.ProductVariantException;
 import com.ecommerce.exception.VariantCreationException;
 import com.ecommerce.model.dto.AttributeDTO;
 import com.ecommerce.model.dto.ProductVariantGenerateCombinationDTO;
@@ -34,9 +17,24 @@ import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.repository.ProductVariantAttributeValueRepository;
 import com.ecommerce.repository.ProductVariantRepository;
 import com.ecommerce.service.interfaces.ProductVariantService;
-
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -71,7 +69,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
       return productVariantRepository.findAllByProductId(productId);
     } catch (Exception e) {
       log.error("Error while searching variants for product {}: {}", productId, e.getMessage());
-      throw new RuntimeException("Error while retrieving product variants", e);
+      throw new ProductVariantException("Error while retrieving product variants", e);
     }
   }
 
@@ -385,7 +383,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public List<ProductVariant> generateVariantCombinations(
       ProductVariantGenerateCombinationDTO dto) {
     // On utilise la méthode generateVariants existante qui génère déjà les combinaisons
@@ -396,15 +394,15 @@ public class ProductVariantServiceImpl implements ProductVariantService {
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public ProductVariant findVariantById(Long id) {
     return productVariantRepository
         .findById(id)
-        .orElseThrow(() -> new RuntimeException("Variant not found with ID: " + id));
+        .orElseThrow(() -> new ProductVariantException("Variant not found with ID: " + id));
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public List<ProductVariant> findVariantsByProductId(Long productId) {
     return findAllByProductId(productId);
   }
@@ -424,7 +422,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
   }
 
   @Override
-  @Transactional(rollbackFor={Exception.class})
+  @Transactional(rollbackFor = {Exception.class})
   public void deleteVariant(Long id) {
     productVariantRepository.deleteById(id);
   }
@@ -501,4 +499,28 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
   }
 
+  @Transactional
+  public List<ProductVariant> createVariantBatch(
+      Long productId,
+      List<Map<String, Object>> variants,
+      ProductVariantGenerateCombinationDTO dto) {
+    try {
+      // Code existant
+      return new ArrayList<>(); // Cette ligne sera remplacée par l'implémentation réelle
+    } catch (Exception e) {
+      log.error("Error creating variants: {}", e.getMessage());
+      throw new ProductVariantException("Error creating product variants: " + e.getMessage(), e);
+    }
+  }
+
+  @Transactional
+  public List<ProductVariant> saveVariantBatch(Long productId, List<Map<String, Object>> variants) {
+    try {
+      // Code existant
+      return new ArrayList<>(); // Cette ligne sera remplacée par l'implémentation réelle
+    } catch (Exception e) {
+      log.error("Error saving variants batch: {}", e.getMessage());
+      throw new ProductVariantException("Error saving product variants: " + e.getMessage(), e);
+    }
+  }
 }

@@ -1,16 +1,5 @@
 package com.ecommerce.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ecommerce.exception.CategoryNotFoundException;
 import com.ecommerce.exception.ProductConcurrencyException;
 import com.ecommerce.exception.ProductException;
@@ -23,9 +12,17 @@ import com.ecommerce.model.entity.Product;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.interfaces.ProductService;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -58,7 +55,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public Product findProductById(Long id) {
     if (id <= 0) {
       throw new IllegalArgumentException("ID must be positive");
@@ -67,19 +64,18 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public Page<Product> findAllProducts(Pageable pageable) {
     return productRepository.findAll(pageable);
   }
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public Page<Product> findProductsByCategory(Category category, Pageable pageable) {
     return productRepository.findProductsByCategory(category, pageable);
   }
 
-
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public long getProductCount() {
     return productRepository.count();
   }
@@ -185,5 +181,4 @@ public class ProductServiceImpl implements ProductService {
       throw new ProductException(e.getMessage());
     }
   }
-
 }

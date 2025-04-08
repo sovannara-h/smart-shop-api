@@ -1,15 +1,13 @@
 package com.ecommerce.service.impl;
 
+import com.ecommerce.service.interfaces.NotificationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.ecommerce.service.interfaces.NotificationService;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -31,7 +29,6 @@ public class NotificationServiceImpl implements NotificationService {
     log.info("NotificationService created with emailSender: {}", emailSender != null);
     // this.slack = Slack.getInstance();
   }
-
 
   public NotificationServiceImpl() {
     this.emailSender = null;

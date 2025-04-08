@@ -1,17 +1,15 @@
 package com.ecommerce.service.impl;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ecommerce.exception.CategoryException;
 import com.ecommerce.model.entity.Category;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.service.interfaces.CategoryService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -21,7 +19,7 @@ public class CategoryServiceImpl implements CategoryService {
   private final CategoryRepository categoryRepository;
 
   @Override
-  @Transactional(readOnly=true)
+  @Transactional(readOnly = true)
   public Page<Category> findAllCategories(Pageable pageable) {
     return categoryRepository.findAll(pageable);
   }
@@ -36,5 +34,4 @@ public class CategoryServiceImpl implements CategoryService {
       throw new CategoryException("Error creating category: " + e.getMessage());
     }
   }
-
-  }
+}

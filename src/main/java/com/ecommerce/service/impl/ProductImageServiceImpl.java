@@ -1,24 +1,21 @@
 package com.ecommerce.service.impl;
 
+import com.ecommerce.exception.ProductImageUpsertException;
+import com.ecommerce.model.dto.ProductImageUpsertDTO;
+import com.ecommerce.model.entity.ProductImage;
+import com.ecommerce.repository.ProductImageRepository;
+import com.ecommerce.service.interfaces.ProductImageService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.ecommerce.exception.ProductImageUpsertException;
-import com.ecommerce.model.dto.ProductImageUpsertDTO;
-import com.ecommerce.model.entity.ProductImage;
-import com.ecommerce.repository.ProductImageRepository;
-import com.ecommerce.service.interfaces.ProductImageService;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -110,7 +107,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     return allResults;
   }
-
 
   @Transactional
   public List<ProductImage> upsertProductImages(

@@ -1,5 +1,15 @@
 package com.ecommerce.service.impl;
 
+import com.ecommerce.exception.EntityLockedException;
+import com.ecommerce.exception.EntityNotFoundException;
+import com.ecommerce.exception.SessionExpiredException;
+import com.ecommerce.exception.SessionNotFoundException;
+import com.ecommerce.exception.SessionOperationException;
+import com.ecommerce.model.entity.EditSessionAudit;
+import com.ecommerce.repository.EditSessionAuditRepository;
+import com.ecommerce.service.interfaces.EditSessionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.time.LocalDateTime;
@@ -11,25 +21,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.ecommerce.exception.EntityLockedException;
-import com.ecommerce.exception.EntityNotFoundException;
-import com.ecommerce.exception.SessionExpiredException;
-import com.ecommerce.exception.SessionNotFoundException;
-import com.ecommerce.model.entity.EditSessionAudit;
-import com.ecommerce.repository.EditSessionAuditRepository;
-import com.ecommerce.service.interfaces.EditSessionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import jakarta.persistence.EntityManager;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -116,18 +114,18 @@ public class EditSessionServiceImpl implements EditSessionService {
   }
 
   private List<String> determineProcessingOrder(Set<String> entityTypes) {
-      Map<String, Integer> priorityMap = new HashMap<>();
+    Map<String, Integer> priorityMap = new HashMap<>();
 
-      priorityMap.put("ATTRIBUTEVALUE", 1);
-      priorityMap.put("VARIANT", 2);
-      priorityMap.put("PRODUCT", 3);
-      priorityMap.put("CATEGORY", 3);
-      priorityMap.put("USER", 4);
+    priorityMap.put("ATTRIBUTEVALUE", 1);
+    priorityMap.put("VARIANT", 2);
+    priorityMap.put("PRODUCT", 3);
+    priorityMap.put("CATEGORY", 3);
+    priorityMap.put("USER", 4);
 
-      return entityTypes.stream()
-          .sorted(Comparator.comparingInt(type -> priorityMap.getOrDefault(type, 100)))
-          .collect(Collectors.toList());
-    }
+    return entityTypes.stream()
+        .sorted(Comparator.comparingInt(type -> priorityMap.getOrDefault(type, 100)))
+        .collect(Collectors.toList());
+  }
 
   private Object convertValueToType(Object value, Class<?> targetType) {
     if (value == null) return null;
@@ -207,10 +205,10 @@ public class EditSessionServiceImpl implements EditSessionService {
       return currentSessionId;
     } catch (NoSuchMethodException e) {
       // Entity doesn't have sessionId, this is normal for some entities
-      throw new RuntimeException("Error executing getSessionId method", e);
+      throw new SessionOperationException("Error executing getSessionId method", e);
     } catch (Exception e) {
       log.error("Error verifying sessionId: {}", e.getMessage());
-      throw new RuntimeException("Error executing getSessionId method", e);
+      throw new SessionOperationException("Error executing getSessionId method", e);
     }
   }
 
@@ -241,19 +239,19 @@ public class EditSessionServiceImpl implements EditSessionService {
           "Illegal access to setSessionId method on {}: {}",
           entity.getClass().getSimpleName(),
           e.getMessage());
-      throw new RuntimeException("Illegal access to setSessionId", e);
+      throw new SessionOperationException("Illegal access to setSessionId", e);
     } catch (java.lang.reflect.InvocationTargetException e) {
       log.error(
           "Error invoking setSessionId on {}: {}",
           entity.getClass().getSimpleName(),
           e.getCause().getMessage());
-      throw new RuntimeException("Error invoking setSessionId", e.getCause());
+      throw new SessionOperationException("Error invoking setSessionId", e.getCause());
     } catch (Exception e) {
       log.error(
           "Unexpected error setting sessionId on {}: {}",
           entity.getClass().getSimpleName(),
           e.getMessage());
-      throw new RuntimeException("Unexpected error setting sessionId", e);
+      throw new SessionOperationException("Unexpected error setting sessionId", e);
     }
   }
 
@@ -364,7 +362,10 @@ public class EditSessionServiceImpl implements EditSessionService {
     return sessionId;
   }
 
-  @Transactional(propagation = Propagation.REQUIRED, isolation=Isolation.READ_COMMITTED, rollbackFor=Exception.class)
+  @Transactional(
+      propagation = Propagation.REQUIRED,
+      isolation = Isolation.READ_COMMITTED,
+      rollbackFor = Exception.class)
   public void confirmSession(String sessionId) {
     List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
 
@@ -385,7 +386,6 @@ public class EditSessionServiceImpl implements EditSessionService {
     auditRepository.deleteBySessionId(sessionId);
   }
 
-  
   @Transactional
   public void cancelSession(String sessionId) {
     List<EditSessionAudit> audits = auditRepository.findBySessionId(sessionId);
@@ -516,5 +516,4 @@ public class EditSessionServiceImpl implements EditSessionService {
 
     auditRepository.save(audit);
   }
-
 }
