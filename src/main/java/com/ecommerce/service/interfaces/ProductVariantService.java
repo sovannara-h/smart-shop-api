@@ -4,6 +4,7 @@ import com.ecommerce.model.dto.ProductVariantGenerateCombinationDTO;
 import com.ecommerce.model.dto.VariantCreateDTO;
 import com.ecommerce.model.entity.ProductVariant;
 import java.util.List;
+import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Service for product variant management */
@@ -57,6 +58,14 @@ public interface ProductVariantService {
    * @return list of generated product variants
    */
   List<ProductVariant> generateVariantCombinations(ProductVariantGenerateCombinationDTO dto);
+
+  /**
+   * Generates variant data based on attribute combinations
+   *
+   * @param dto data transfer object containing product ID and attributes
+   * @return list of maps containing variant data
+   */
+  List<Map<String, Object>> generateVariants(ProductVariantGenerateCombinationDTO dto);
 
   /**
    * Batch creates or updates multiple product variants for a product

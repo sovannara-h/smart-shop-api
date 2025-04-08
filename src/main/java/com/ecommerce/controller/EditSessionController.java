@@ -5,8 +5,10 @@ import com.ecommerce.exception.SessionExpiredException;
 import com.ecommerce.exception.SessionNotFoundException;
 import com.ecommerce.model.dto.SessionResponseDTO;
 import com.ecommerce.model.dto.SessionStartDTO;
-import com.ecommerce.service.impl.EditSessionServiceImpl;
+import com.ecommerce.service.interfaces.EditSessionService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,17 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/sessions")
+@Tag(name = "Edit Sessions", description = "Edit session management APIs")
+@Slf4j
 @RequiredArgsConstructor
 public class EditSessionController {
 
-  private final EditSessionServiceImpl editSessionServiceImpl;
+  private final EditSessionService editSessionService;
 
   /** Starts an edit session */
   @PostMapping("/start")
   public ResponseEntity<?> startSession(@RequestBody SessionStartDTO request) {
     try {
       String sessionId =
-          editSessionServiceImpl.startSession(request.getEntityType(), request.getEntityId());
+          editSessionService.startSession(request.getEntityType(), request.getEntityId());
 
       SessionResponseDTO response =
           new SessionResponseDTO(
@@ -50,7 +54,7 @@ public class EditSessionController {
   @PostMapping("/{sessionId}/confirm")
   public ResponseEntity<?> confirmSession(@PathVariable String sessionId) {
     try {
-      editSessionServiceImpl.confirmSession(sessionId);
+      editSessionService.confirmSession(sessionId);
       return ResponseEntity.ok().build();
     } catch (SessionNotFoundException | SessionExpiredException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -63,7 +67,7 @@ public class EditSessionController {
   @PostMapping("/{sessionId}/cancel")
   public ResponseEntity<?> cancelSession(@PathVariable String sessionId) {
     try {
-      editSessionServiceImpl.cancelSession(sessionId);
+      editSessionService.cancelSession(sessionId);
       return ResponseEntity.ok().build();
     } catch (SessionNotFoundException | SessionExpiredException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -75,7 +79,7 @@ public class EditSessionController {
   /** Checks if a session is valid */
   @GetMapping("/{sessionId}/validate")
   public ResponseEntity<?> validateSession(@PathVariable String sessionId) {
-    boolean isValid = editSessionServiceImpl.isSessionValid(sessionId);
+    boolean isValid = editSessionService.isSessionValid(sessionId);
     return ResponseEntity.ok(isValid);
   }
 
@@ -83,7 +87,7 @@ public class EditSessionController {
   @PostMapping("/start-create")
   public ResponseEntity<?> startCreateSession(@RequestBody SessionStartDTO request) {
     try {
-      String sessionId = editSessionServiceImpl.startCreateSession(request.getEntityType());
+      String sessionId = editSessionService.startCreateSession(request.getEntityType());
 
       SessionResponseDTO response =
           new SessionResponseDTO(

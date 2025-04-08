@@ -4,7 +4,7 @@ import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.dto.ProductImagesUpsertDTO;
 import com.ecommerce.model.entity.ProductImage;
 import com.ecommerce.repository.ProductRepository;
-import com.ecommerce.service.impl.ProductImageServiceImpl;
+import com.ecommerce.service.interfaces.ProductImageService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProductImageController {
 
-  private final ProductImageServiceImpl productImageServiceImpl;
+  private final ProductImageService productImageService;
   private final ProductRepository productRepository;
 
   @PostMapping
@@ -64,11 +64,10 @@ public class ProductImageController {
 
       if (sessionId != null) {
         productImages =
-            productImageServiceImpl.upsertProductImagesInSession(
+            productImageService.upsertProductImagesInSession(
                 sessionId, dto.getProductImages(), productId);
       } else {
-        productImages =
-            productImageServiceImpl.upsertProductImages(dto.getProductImages(), productId);
+        productImages = productImageService.upsertProductImages(dto.getProductImages(), productId);
       }
 
       return ResponseEntity.ok(

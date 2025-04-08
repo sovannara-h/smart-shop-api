@@ -1,6 +1,6 @@
 package com.ecommerce.config;
 
-import com.ecommerce.service.impl.EditSessionServiceImpl;
+import com.ecommerce.service.interfaces.EditSessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @RequiredArgsConstructor
 public class SessionInterceptor implements HandlerInterceptor {
 
-  private final EditSessionServiceImpl editSessionServiceImpl;
+  private final EditSessionService editSessionService;
 
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -20,7 +20,7 @@ public class SessionInterceptor implements HandlerInterceptor {
 
     if (sessionId != null) {
       // Vérifier si la session est valide
-      if (!editSessionServiceImpl.isSessionValid(sessionId)) {
+      if (!editSessionService.isSessionValid(sessionId)) {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.getWriter().write("Session expirée ou invalide");
         return false;

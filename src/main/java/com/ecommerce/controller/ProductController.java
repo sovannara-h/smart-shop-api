@@ -4,7 +4,7 @@ import com.ecommerce.exception.ProductException;
 import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Product;
-import com.ecommerce.service.impl.ProductServiceImpl;
+import com.ecommerce.service.interfaces.ProductService;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProductController {
 
-  private final ProductServiceImpl productService;
+  private final ProductService productService;
 
   @Operation(summary = "Create a new product")
   @Timed(value = "product.creation.time", description = "Product creation time")

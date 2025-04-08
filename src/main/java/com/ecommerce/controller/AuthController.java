@@ -2,10 +2,11 @@ package com.ecommerce.controller;
 
 import com.ecommerce.model.dto.SignUpRequest;
 import com.ecommerce.model.entity.User;
-import com.ecommerce.service.impl.AuthServiceImpl;
-import com.ecommerce.service.impl.UserServiceImpl;
+import com.ecommerce.service.interfaces.AuthService;
+import com.ecommerce.service.interfaces.UserService;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,14 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@AllArgsConstructor
 public class AuthController {
-  private final UserServiceImpl userServiceImpl;
-  private final AuthServiceImpl authServiceImpl;
-
-  public AuthController(UserServiceImpl userServiceImpl, AuthServiceImpl authServiceImpl) {
-    this.userServiceImpl = userServiceImpl;
-    this.authServiceImpl = authServiceImpl;
-  }
+  private final UserService userServiceImpl;
+  private final AuthService authServiceImpl;
 
   @PostMapping("/signup")
   public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {

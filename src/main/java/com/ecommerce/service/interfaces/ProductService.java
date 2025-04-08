@@ -17,6 +17,15 @@ public interface ProductService {
   Product createProduct(ProductCreateDTO dto);
 
   /**
+   * Creates a new product in an edit session
+   *
+   * @param sessionId edit session identifier
+   * @param dto product creation data
+   * @return the created product
+   */
+  Product createProductInSession(String sessionId, ProductCreateDTO dto);
+
+  /**
    * Updates a product
    *
    * @param id product identifier
@@ -24,6 +33,16 @@ public interface ProductService {
    * @return the updated product
    */
   Product updateProduct(Long id, Product product);
+
+  /**
+   * Updates a product in an edit session
+   *
+   * @param sessionId edit session identifier
+   * @param id product identifier
+   * @param product updated product data
+   * @return the updated product
+   */
+  Product updateProductInSession(String sessionId, Long id, Product product);
 
   /**
    * Deletes a product
@@ -56,5 +75,12 @@ public interface ProductService {
    * @return paginated list of products in the specified category
    */
   Page<Product> findProductsByCategory(Category category, Pageable pageable);
+
+  /**
+   * Get total count of products
+   *
+   * @return the total count of products
+   */
+  long getProductCount();
   // List<Product> searchProducts(ProductSearchCriteria criteria);
 }

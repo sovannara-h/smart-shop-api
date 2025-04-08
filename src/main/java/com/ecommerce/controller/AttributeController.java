@@ -3,7 +3,7 @@ package com.ecommerce.controller;
 import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.dto.AttributeDTO;
 import com.ecommerce.model.dto.CreateAttributeDTO;
-import com.ecommerce.service.impl.AttributeServiceImpl;
+import com.ecommerce.service.interfaces.AttributeService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/attributes")
-@Tag(name = "Attributes", description = "Attribute management")
+@Tag(name = "Attributes", description = "Attribute management APIs")
 @Slf4j
 @RequiredArgsConstructor
 public class AttributeController {
 
-  private final AttributeServiceImpl attributeService;
+  private final AttributeService attributeService;
 
   @GetMapping("/with-values")
   public ResponseEntity<ApiResponse<List<AttributeDTO>>> getAllAttributes() {

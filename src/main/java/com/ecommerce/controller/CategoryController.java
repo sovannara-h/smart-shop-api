@@ -2,7 +2,7 @@ package com.ecommerce.controller;
 
 import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.entity.Category;
-import com.ecommerce.service.impl.CategoryServiceImpl;
+import com.ecommerce.service.interfaces.CategoryService;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,13 +29,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Categories", description = "Category management API")
 @Validated
 @Slf4j
+@AllArgsConstructor
 public class CategoryController {
 
-  private final CategoryServiceImpl categoryServiceImpl;
-
-  public CategoryController(CategoryServiceImpl categoryServiceImpl) {
-    this.categoryServiceImpl = categoryServiceImpl;
-  }
+  private final CategoryService categoryServiceImpl;
 
   @Operation(summary = "Create a new category")
   @Timed(value = "category.creation.time", description = "Category creation time")

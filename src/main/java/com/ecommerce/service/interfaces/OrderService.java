@@ -4,6 +4,7 @@ import com.ecommerce.model.dto.OrderCreateDTO;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.Order.Status;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -68,4 +69,12 @@ public interface OrderService {
    */
   Page<Order> findOrdersBetweenDates(
       LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+
+  /**
+   * Finds orders by month
+   *
+   * @param month month number (1-12)
+   * @return list of orders placed in the specified month
+   */
+  List<Order> findOrdersByMonth(Integer month);
 }

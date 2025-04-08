@@ -5,7 +5,7 @@ import com.ecommerce.model.dto.ApiResponse;
 import com.ecommerce.model.dto.OrderCreateDTO;
 import com.ecommerce.model.entity.Order;
 import com.ecommerce.model.entity.Order.Status;
-import com.ecommerce.service.impl.OrderServiceImpl;
+import com.ecommerce.service.interfaces.OrderService;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -35,17 +36,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/api/v1/orders")
 @Tag(name = "Orders", description = "Order management API")
 @Validated
 @Slf4j
+@AllArgsConstructor
 public class OrderController {
 
-  private final OrderServiceImpl orderServiceImpl;
-
-  public OrderController(OrderServiceImpl orderServiceImpl) {
-    this.orderServiceImpl = orderServiceImpl;
-  }
+  private final OrderService orderServiceImpl;
 
   @Operation(summary = "Create a new order")
   @Timed(value = "order.creation.time", description = "Order creation time")

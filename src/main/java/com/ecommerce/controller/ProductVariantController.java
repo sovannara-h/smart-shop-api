@@ -5,7 +5,7 @@ import com.ecommerce.model.dto.ProductVariantCreateDTO;
 import com.ecommerce.model.dto.ProductVariantGenerateCombinationDTO;
 import com.ecommerce.model.entity.ProductVariant;
 import com.ecommerce.repository.ProductRepository;
-import com.ecommerce.service.impl.ProductVariantServiceImpl;
+import com.ecommerce.service.interfaces.ProductVariantService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProductVariantController {
 
-  private final ProductVariantServiceImpl variantService;
+  private final ProductVariantService variantService;
   private final ProductRepository productRepository;
 
   @PostMapping

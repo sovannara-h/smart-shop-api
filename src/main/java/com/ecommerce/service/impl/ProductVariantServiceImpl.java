@@ -16,6 +16,8 @@ import com.ecommerce.repository.AttributeValueRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.repository.ProductVariantAttributeValueRepository;
 import com.ecommerce.repository.ProductVariantRepository;
+import com.ecommerce.service.interfaces.AttributeService;
+import com.ecommerce.service.interfaces.EditSessionService;
 import com.ecommerce.service.interfaces.ProductVariantService;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -45,10 +47,10 @@ public class ProductVariantServiceImpl implements ProductVariantService {
   private final AttributeRepository attributeRepository;
   private final AttributeValueRepository attributeValueRepository;
   private final ProductVariantRepository productVariantRepository;
-  private final AttributeServiceImpl attributeService;
+  private final AttributeService attributeService;
   private final JdbcTemplate jdbcTemplate;
   private static final int BATCH_SIZE = 500;
-  private final EditSessionServiceImpl editSessionServiceImpl;
+  private final EditSessionService editSessionService;
   private final ProductVariantAttributeValueRepository productVariantAttributeValueRepository;
 
   private String generateSku(Product product, Map<String, String> combination) {
@@ -484,10 +486,10 @@ public class ProductVariantServiceImpl implements ProductVariantService {
         ProductVariant existingVariant = existingVariantsMap.get(upsertedVariant.getId());
 
         if (existingVariant != null) {
-          editSessionServiceImpl.registerEntityModification(
+          editSessionService.registerEntityModification(
               sessionId, "PRODUCTVARIANT", upsertedVariant.getId(), existingVariant);
         } else {
-          editSessionServiceImpl.registerEntityCreation(
+          editSessionService.registerEntityCreation(
               sessionId, "PRODUCTVARIANT", upsertedVariant.getId());
         }
       }
