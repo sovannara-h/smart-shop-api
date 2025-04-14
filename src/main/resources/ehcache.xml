@@ -1,0 +1,41 @@
+<config xmlns="http://www.ehcache.org/v3">
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="minutes">30</ttl>
+        </expiry>
+        <resources>
+            <heap>1000</heap>
+            <offheap unit="MB">10</offheap>
+        </resources>
+    </cache-template>
+
+    <cache alias="com.ecommerce.model.entity.Category" uses-template="default">
+        <expiry>
+            <ttl unit="hours">12</ttl>
+        </expiry>
+    </cache>
+
+    <cache alias="com.ecommerce.model.entity.Product" uses-template="default">
+        <expiry>
+            <ttl unit="minutes">60</ttl>
+        </expiry>
+    </cache>
+
+    <cache alias="com.ecommerce.model.entity.User" uses-template="default">
+        <expiry>
+            <ttl unit="minutes">30</ttl>
+        </expiry>
+    </cache>
+
+    <cache alias="com.ecommerce.model.entity.Attribute" uses-template="default">
+        <expiry>
+            <ttl unit="hours">24</ttl>
+        </expiry>
+    </cache>
+
+    <cache alias="com.ecommerce.model.entity.AttributeValue" uses-template="default">
+        <expiry>
+            <ttl unit="hours">24</ttl>
+        </expiry>
+    </cache>
+</config>

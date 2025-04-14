@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Index;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -27,12 +28,15 @@ public class EditSessionAudit {
   private Long id;
 
   @Column(name = "session_id", nullable = false)
+  @Index(name = "idx_edit_session_audit_session_id")
   private String sessionId;
 
   @Column(name = "entity_type", nullable = false)
+  @Index(name = "idx_edit_session_audit_entity_type")
   private String entityType;
 
   @Column(name = "entity_id", nullable = false)
+  @Index(name = "idx_edit_session_audit_entity_id")
   private Long entityId;
 
   @Column(name = "action", nullable = false)
@@ -47,5 +51,6 @@ public class EditSessionAudit {
   private LocalDateTime createdAt = LocalDateTime.now();
 
   @Column(name = "expires_at", nullable = false)
+  @Index(name = "idx_edit_session_audit_expires_at")
   private LocalDateTime expiresAt;
 }

@@ -71,6 +71,8 @@ public interface EditSessionService {
    *
    * @param sessionId session identifier
    * @return expiry date and time
+   * @throws SessionNotFoundException if the session does not exist
+   * @throws IllegalArgumentException if the session identifier is null or empty
    */
-  LocalDateTime getSessionExpiryTime(String sessionId);
+  LocalDateTime getExpiryTime(String sessionId);
 }

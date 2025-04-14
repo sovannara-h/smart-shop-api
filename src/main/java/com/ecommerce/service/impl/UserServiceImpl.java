@@ -10,11 +10,11 @@ import com.ecommerce.service.interfaces.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
-@Transactional
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @Transactional(rollbackFor = Exception.class)
+  @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
   public User updateUser(Long id, User user) throws UserNotFoundException {
     if (id == null || user == null) {
       throw new IllegalArgumentException(
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
   public User registerUser(SignUpRequest signUpRequest) {
     if (signUpRequest == null) {
       throw new IllegalArgumentException("La demande d'inscription ne peut pas être nulle");
@@ -102,7 +102,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
   public void deleteUser(Long id) throws UserNotFoundException {
     if (!userRepository.existsById(id)) {
       throw new UserNotFoundException("Utilisateur non trouvé avec l'ID: " + id);

@@ -15,12 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Implementation of the order management service. Handles CRUD operations for orders and status
+ * transitions.
+ */
 @Slf4j
 @Service
-@Transactional
 public class OrderServiceImpl implements OrderService {
 
   private final OrderRepository orderRepository;
@@ -31,6 +33,14 @@ public class OrderServiceImpl implements OrderService {
     this.userRepository = userRepository;
   }
 
+  /**
+   * Retrieves an order by its identifier. Uses a read-only transaction to improve performance.
+   *
+   * @param id The order identifier
+   * @return The found order
+   * @throws IllegalArgumentException If the id is not positive
+   * @throws OrderException If the order is not found
+   */
   @Override
   @Transactional(readOnly = true)
   public Order findOrderById(Long id) {
@@ -58,6 +68,15 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  /**
+   * Retrieves orders by month. Uses a read-only transaction to improve performance.
+   *
+   * @param month The month number (1-12)
+   * @return The list of orders for the specified month
+   * @throws IllegalArgumentException If the month is not valid
+   * @throws OrderException If an error occurs during retrieval
+   */
+  @Override
   @Transactional(readOnly = true)
   public List<Order> findOrdersByMonth(Integer month) {
     if (month < 0) {
@@ -111,6 +130,16 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  /**
+   * Updates the status of an order. This operation uses the default isolation level to ensure
+   * consistency when modifying the status.
+   *
+   * @param id The order identifier
+   * @param newStatus The new status
+   * @return The updated order
+   * @throws IllegalArgumentException If the id is not positive or if the status is null
+   * @throws OrderException If the order is not found or if an error occurs
+   */
   @Override
   @Transactional
   public Order updateOrderStatus(Long id, Status newStatus) {
@@ -137,8 +166,20 @@ public class OrderServiceImpl implements OrderService {
     }
   }
 
+  /**
+   * Creates a new order. This method uses the default isolation level to ensure data consistency
+   * during order creation.
+   *
+   * @param orderDTO Order creation data
+   * @return The created order
+   * @throws IllegalArgumentException If the order data is invalid
+   * @throws UserNotFoundException If the specified user does not exist
+   */
   @Override
-  @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+  // @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class) //
+  // QUESTION: pourquoi avoir retirer (isolation = Isolation.READ_COMMITTED, rollbackFor =
+  // Exception.class) ?
+  @Transactional
   public Order createOrder(OrderCreateDTO orderDTO) {
     if (orderDTO == null) {
       throw new IllegalArgumentException("Order data cannot be null");

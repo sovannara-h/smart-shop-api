@@ -58,7 +58,8 @@ public class OrderControllerIntegrationTest {
     orderDTO.setShippingName("John Doe");
     orderDTO.setShippingAddress("123 Test St");
     orderDTO.setShippingPhone("0123456789");
-    orderDTO.setItems(List.of(new OrderItemDTO(product.getId(), 2)));
+    orderDTO.setItems(
+        List.of(OrderItemDTO.builder().productId(product.getId()).quantity(2).build()));
 
     mockMvc
         .perform(

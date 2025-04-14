@@ -92,7 +92,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     Attribute attribute = Attribute.builder().name(dto.getName()).build();
 
-    final Attribute finalAttribute = attribute;
+    Attribute finalAttribute = attribute;
     Set<AttributeValue> attributeValues =
         dto.getValues().stream()
             .map(value -> AttributeValue.builder().attribute(finalAttribute).value(value).build())

@@ -75,6 +75,8 @@ public interface OrderService {
    *
    * @param month month number (1-12)
    * @return list of orders placed in the specified month
+   * @throws IllegalArgumentException if the month is not valid (must be between 1 and 12)
+   * @throws OrderException if an error occurs while retrieving orders
    */
   List<Order> findOrdersByMonth(Integer month);
 }

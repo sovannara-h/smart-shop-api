@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +35,6 @@ public class ProductVariantController {
   private final ProductRepository productRepository;
 
   @PostMapping
-  @Transactional
   public ResponseEntity<ApiResponse<List<ProductVariant>>> createProductVariants(
       @PathVariable Long productId,
       @Valid @RequestBody ProductVariantCreateDTO dto,
@@ -70,7 +68,6 @@ public class ProductVariantController {
   }
 
   @PostMapping("/generate")
-  @Transactional(readOnly = true)
   public ResponseEntity<ApiResponse<List<Map<String, Object>>>> generateVariants(
       @PathVariable Long productId, @Valid @RequestBody ProductVariantGenerateCombinationDTO dto) {
     try {

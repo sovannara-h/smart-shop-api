@@ -3,6 +3,7 @@ package com.ecommerce.service.interfaces;
 import com.ecommerce.model.dto.ProductCreateDTO;
 import com.ecommerce.model.entity.Category;
 import com.ecommerce.model.entity.Product;
+import com.ecommerce.repository.projection.ProductSummary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -82,5 +83,14 @@ public interface ProductService {
    * @return the total count of products
    */
   long getProductCount();
+
+  /**
+   * Finds all active products with optimized loading
+   *
+   * @param pageable pagination information
+   * @return paginated list of product summaries
+   */
+  Page<ProductSummary> findAllActiveProductsOptimized(Pageable pageable);
+
   // List<Product> searchProducts(ProductSearchCriteria criteria);
 }
